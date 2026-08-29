@@ -1063,11 +1063,15 @@
             heroSection.classList.add('edit-mode');
             editModeBtn.style.display = 'none';
             finishBtn.style.display = 'block';
+
+            // Convert every page text element to a movable/resizable box right away,
+            // in one go, so nothing shifts size later while you're clicking around.
+            document.querySelectorAll('.editable-text').forEach(convertTextToPositioned);
         });
 
-        // Existing page text: single click no longer edits anything.
-        // First double-click turns it into a movable/resizable box (same as a shape),
-        // then opens the menu (Edit Text / Font Size / Color / Delete / Transparency / Layer).
+        // Turns a normal-flow text element into a positioned, resizable box - same
+        // handles and drag behavior as a shape. Called once per element, up front,
+        // when Edit Mode is entered (not lazily on double-click, which caused a jump).
         function convertTextToPositioned(el) {
             if (el.classList.contains('editable-element')) return; // already converted
 
@@ -1098,22 +1102,6 @@
             });
 
             el.addEventListener('mousedown', selectElement);
-        }
-
-        // Reverses convertTextToPositioned - back to plain flowing text (Form 1 look)
-        function revertToForm1(el) {
-            el.querySelectorAll('.resize-handle').forEach(h => h.remove());
-            el.classList.remove('editable-element', 'selected');
-            el.style.position = '';
-            el.style.left = '';
-            el.style.top = '';
-            el.style.width = '';
-            el.style.height = '';
-            el.style.margin = '';
-            el.style.cursor = '';
-            el.style.zIndex = '';
-            delete el.dataset.shapeType;
-            el.removeEventListener('mousedown', selectElement);
         }
 
         document.querySelectorAll('.editable-text').forEach(el => {
@@ -1280,18 +1268,15 @@
         function openElementMenu(target, x, y) {
             menuTarget = target;
             const isPageText = target.classList.contains('editable-text');
-            const isConverted = target.classList.contains('editable-element');
             const type = isPageText ? 'text' : (target.dataset.shapeType || 'shape');
             const hasText = isPageText || type === 'text' || type === 'button';
             const currentOpacity = target.style.opacity !== '' ? parseFloat(target.style.opacity) : 1;
             const sliderValue = (1 - currentOpacity).toFixed(2);
             const currentFontSize = parseInt(getComputedStyle(target).fontSize, 10) || 16;
             const currentColor = rgbToHex(getComputedStyle(target).color);
+            const currentRadius = parseFloat(getComputedStyle(target).borderRadius) || 0;
 
             let html = `<div class="element-menu-title">${type}</div>`;
-            if (isPageText) {
-                html += `<button type="button" data-action="toggleform">${isConverted ? 'Switch to Form 1 (plain text)' : 'Switch to Form 2 (move/resize)'}</button>`;
-            }
             if (hasText) {
                 html += `<button type="button" data-action="edit">Edit Text</button>`;
                 html += `
@@ -1302,6 +1287,19 @@
                     <div class="transparency-row">
                         <label>Text Color</label>
                         <input type="color" value="${currentColor}" data-action="color">
+                    </div>
+                `;
+            }
+            if (type !== 'circle') {
+                html += `
+                    <div class="panel-section" style="gap:8px;">
+                        <label style="font-size:0.7rem;">Rounded Corners</label>
+                        <div class="toggle-switch">
+                            <label class="switch">
+                                <input type="checkbox" data-action="rounded" ${currentRadius > 0 ? 'checked' : ''}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
                     </div>
                 `;
             }
@@ -1352,16 +1350,15 @@
             } else if (action === 'backward') {
                 const z = parseInt(menuTarget.style.zIndex || '10', 10);
                 menuTarget.style.zIndex = Math.max(1, z - 1).toString();
-            } else if (action === 'toggleform') {
-                const rect = elementMenu.getBoundingClientRect();
-                if (menuTarget.classList.contains('editable-element')) {
-                    revertToForm1(menuTarget);
-                } else {
-                    convertTextToPositioned(menuTarget);
-                }
-                openElementMenu(menuTarget, rect.left, rect.top);
             } else if (action === 'done') {
                 closeElementMenu();
+            }
+        });
+
+        elementMenu.addEventListener('change', function(e) {
+            if (!menuTarget) return;
+            if (e.target.dataset.action === 'rounded') {
+                menuTarget.style.borderRadius = e.target.checked ? '16px' : '0px';
             }
         });
 
