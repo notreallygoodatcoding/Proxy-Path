@@ -139,7 +139,7 @@
         .edit-mode .editable-text {
             border: 2px dashed rgba(168, 85, 247, 0.4);
             padding: 4px 8px;
-            cursor: text;
+            cursor: pointer;
             border-radius: 4px;
         }
 
@@ -371,36 +371,6 @@
             background-color: #a855f7;
         }
 
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
-        }
-
-        .file-input-wrapper input[type="file"] {
-            position: absolute;
-            left: -9999px;
-        }
-
-        .file-input-label {
-            display: block;
-            padding: 12px;
-            background: rgba(168, 85, 247, 0.1);
-            border: 1px solid rgba(168, 85, 247, 0.3);
-            color: #a855f7;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            text-align: center;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            transition: all 0.2s;
-        }
-
-        .file-input-label:hover {
-            background: rgba(168, 85, 247, 0.2);
-            border-color: #a855f7;
-        }
-
         .edit-button, .finish-button, .copy-button {
             padding: 12px;
             background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
@@ -458,6 +428,87 @@
         .resize-handle.tr { top: -4px; right: -4px; cursor: ne-resize; }
         .resize-handle.bl { bottom: -4px; left: -4px; cursor: sw-resize; }
         .resize-handle.br { bottom: -4px; right: -4px; cursor: se-resize; }
+
+        /* Element context menu (opens on double-click) */
+        .element-menu {
+            position: fixed;
+            background: rgba(13, 6, 20, 0.98);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            border-radius: 8px;
+            padding: 14px;
+            z-index: 950;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 210px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
+        }
+
+        .element-menu.active {
+            display: flex;
+        }
+
+        .element-menu-title {
+            color: #a855f7;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            opacity: 0.8;
+        }
+
+        .element-menu button {
+            padding: 9px;
+            background: rgba(168, 85, 247, 0.1);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            color: #a855f7;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+        }
+
+        .element-menu button:hover {
+            background: rgba(168, 85, 247, 0.2);
+            border-color: #a855f7;
+        }
+
+        .element-menu button.danger {
+            color: #ff6b6b;
+            border-color: rgba(255, 107, 107, 0.4);
+        }
+
+        .element-menu button.danger:hover {
+            background: rgba(255, 107, 107, 0.15);
+            border-color: #ff6b6b;
+        }
+
+        .element-menu button.done-btn {
+            background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+            color: #0a0a0a;
+            border: none;
+        }
+
+        .element-menu .transparency-row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .element-menu .transparency-row label {
+            color: #a855f7;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .element-menu input[type="range"] {
+            width: 100%;
+            accent-color: #a855f7;
+        }
 
         /* Code Modal */
         .code-modal {
@@ -784,18 +835,13 @@
                 </div>
             </div>
 
-            <div class="panel-section">
-                <label>Image</label>
-                <div class="file-input-wrapper">
-                    <input type="file" id="imageInput" accept="image/*">
-                    <label for="imageInput" class="file-input-label">Upload</label>
-                </div>
-            </div>
-
             <button class="edit-button" id="editModeBtn">Enter Edit</button>
             <button class="finish-button" id="finishBtn" style="display: none;">Export Code</button>
         </div>
     </div>
+
+    <!-- Element context menu: opens on double-click of any shape or text -->
+    <div class="element-menu" id="elementMenu"></div>
 
     <!-- Code Modal -->
     <div class="code-modal" id="codeModal">
@@ -843,6 +889,9 @@
         </div>
     </div>
 
+    <!-- Hidden file input used by the double-click "Upload Image" menu action -->
+    <input type="file" id="elementImageInput" accept="image/*" style="display:none">
+
     <script>
         const TRIGGER_CODE = "1991";
         const DEVELOPER_USERNAME = "X4ZQ3";
@@ -870,27 +919,23 @@
         const copyCodeBtn = document.getElementById('copyCodeBtn');
         const gridSnapToggle = document.getElementById('gridSnapToggle');
         const shapeColor = document.getElementById('shapeColor');
-        const imageInput = document.getElementById('imageInput');
+        const elementMenu = document.getElementById('elementMenu');
+        const elementImageInput = document.getElementById('elementImageInput');
 
         let triggerBuffer = "";
         let resetTimer = null;
         let editMode = false;
         let selectedElement = null;
-        let uploadedImage = null;
+        let menuTarget = null; // the element currently open in the double-click menu
         const GRID_SIZE = 10;
 
-        // Trigger code detection
+        // ---------- Developer trigger / login (unchanged) ----------
         document.addEventListener('keydown', function(e) {
-            if (e.key.length === 1) {
+            if (typeof e.key === 'string' && e.key.length === 1) {
                 triggerBuffer += e.key;
-                
-                if (resetTimer) {
-                    clearTimeout(resetTimer);
-                }
 
-                resetTimer = setTimeout(() => {
-                    triggerBuffer = "";
-                }, RESET_DELAY);
+                if (resetTimer) clearTimeout(resetTimer);
+                resetTimer = setTimeout(() => { triggerBuffer = ""; }, RESET_DELAY);
 
                 if (triggerBuffer.length > TRIGGER_CODE.length) {
                     triggerBuffer = triggerBuffer.slice(-TRIGGER_CODE.length);
@@ -899,9 +944,7 @@
                 if (triggerBuffer.includes(TRIGGER_CODE)) {
                     showLoginPanel();
                     triggerBuffer = "";
-                    if (resetTimer) {
-                        clearTimeout(resetTimer);
-                    }
+                    if (resetTimer) clearTimeout(resetTimer);
                 }
             }
         });
@@ -914,7 +957,6 @@
             passwordInput.value = '';
         }
 
-        // Login
         loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const username = usernameInput.value.trim();
@@ -926,7 +968,7 @@
                 developerBadge.classList.add('active');
                 stagingMessage.classList.remove('show');
                 heroSection.classList.remove('hidden');
-                
+
                 const sessionStartTime = Date.now();
                 localStorage.setItem('developerSessionStart', sessionStartTime);
                 startCountdownTimer();
@@ -938,7 +980,6 @@
             }
         });
 
-        // Panel toggle
         badgeToggle.addEventListener('click', function() {
             developerPanel.classList.toggle('open');
             badgeToggle.textContent = developerPanel.classList.contains('open') ? '<' : '>';
@@ -949,7 +990,6 @@
             badgeToggle.textContent = '>';
         });
 
-        // Timer
         function startCountdownTimer() {
             const updateTimer = function() {
                 const sessionStartTime = parseInt(localStorage.getItem('developerSessionStart'));
@@ -967,9 +1007,9 @@
                     const hours = Math.floor(remainingTime / (1000 * 60 * 60));
                     const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
                     const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
-                    timerDisplay.textContent = 
-                        String(hours).padStart(2, '0') + ':' + 
-                        String(minutes).padStart(2, '0') + ':' + 
+                    timerDisplay.textContent =
+                        String(hours).padStart(2, '0') + ':' +
+                        String(minutes).padStart(2, '0') + ':' +
                         String(seconds).padStart(2, '0');
                 }
             };
@@ -977,7 +1017,6 @@
             const timerInterval = setInterval(updateTimer, 1000);
         }
 
-        // Check session on load
         window.addEventListener('load', function() {
             const sessionStartTime = localStorage.getItem('developerSessionStart');
             if (sessionStartTime) {
@@ -999,21 +1038,29 @@
             }
         });
 
-        // Edit mode
+        // ---------- Edit mode ----------
         editModeBtn.addEventListener('click', function() {
             editMode = true;
             heroSection.style.position = 'relative';
             heroSection.classList.add('edit-mode');
-            
-            document.querySelectorAll('.editable-text').forEach(el => {
-                el.contentEditable = true;
-            });
-            
             editModeBtn.style.display = 'none';
             finishBtn.style.display = 'block';
         });
 
-        // Shape buttons
+        // Existing page text: single click no longer edits anything.
+        // Double-click opens the menu (Edit Text / Delete / Transparency).
+        document.querySelectorAll('.editable-text').forEach(el => {
+            el.addEventListener('dblclick', function(e) {
+                if (!editMode) return;
+                e.stopPropagation();
+                openElementMenu(el, e.clientX, e.clientY, false);
+            });
+            el.addEventListener('blur', function() {
+                el.contentEditable = false;
+            });
+        });
+
+        // ---------- Shapes ----------
         document.querySelectorAll('[data-shape]').forEach(btn => {
             btn.addEventListener('click', function() {
                 if (!editMode) return;
@@ -1025,6 +1072,7 @@
         function createShape(type) {
             const element = document.createElement('div');
             element.className = 'editable-element selected';
+            element.dataset.shapeType = type;
             element.style.left = '100px';
             element.style.top = '100px';
             element.style.width = '120px';
@@ -1043,7 +1091,7 @@
                 element.style.justifyContent = 'center';
                 element.style.fontSize = '14px';
                 element.style.fontWeight = '600';
-                element.contentEditable = true;
+                // NOT contentEditable by default anymore - double-click > Edit Text turns it on
             } else if (type === 'button') {
                 element.textContent = 'Button';
                 element.style.cursor = 'pointer';
@@ -1055,10 +1103,6 @@
                 element.style.borderRadius = '6px';
                 element.style.fontWeight = '600';
                 element.style.fontSize = '14px';
-                if (uploadedImage) {
-                    element.style.backgroundImage = `url(${uploadedImage})`;
-                    element.style.backgroundSize = 'cover';
-                }
             }
 
             ['tl', 'tr', 'bl', 'br'].forEach(pos => {
@@ -1068,16 +1112,24 @@
             });
 
             element.addEventListener('mousedown', selectElement);
+            element.addEventListener('dblclick', function(e) {
+                e.stopPropagation();
+                openElementMenu(element, e.clientX, e.clientY, true);
+            });
+            element.addEventListener('blur', function() {
+                element.contentEditable = false;
+            });
+
             heroSection.appendChild(element);
             selectedElement = element;
         }
 
         function selectElement(e) {
             if (!editMode) return;
-            
+
             const clickedElement = e.target.closest('.editable-element');
             if (!clickedElement) return;
-            
+
             selectedElement = clickedElement;
             document.querySelectorAll('.editable-element').forEach(el => el.classList.remove('selected'));
             selectedElement.classList.add('selected');
@@ -1143,31 +1195,110 @@
             }
         }
 
-        // Image upload
-        imageInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    uploadedImage = event.target.result;
-                };
-                reader.readAsDataURL(file);
+        // ---------- Double-click element menu (Edit / Delete / Transparency / Image) ----------
+        function closeElementMenu() {
+            elementMenu.classList.remove('active');
+            elementMenu.innerHTML = '';
+            menuTarget = null;
+        }
+
+        function openElementMenu(target, x, y, isShape) {
+            menuTarget = target;
+            const type = isShape ? (target.dataset.shapeType || 'shape') : 'text';
+            const canEditText = isShape ? (type === 'text' || type === 'button') : true;
+            const currentOpacity = target.style.opacity !== '' ? parseFloat(target.style.opacity) : 1;
+            const sliderValue = (1 - currentOpacity).toFixed(2);
+
+            let html = `<div class="element-menu-title">${type}</div>`;
+            if (canEditText) {
+                html += `<button type="button" data-action="edit">Edit Text</button>`;
+            }
+            if (isShape) {
+                html += `<button type="button" data-action="image">Upload Image</button>`;
+            }
+            html += `
+                <div class="transparency-row">
+                    <label>Transparency</label>
+                    <input type="range" min="0" max="1" step="0.01" value="${sliderValue}" data-action="opacity">
+                </div>
+                <button type="button" data-action="delete" class="danger">Delete</button>
+                <button type="button" data-action="done" class="done-btn">Done</button>
+            `;
+            elementMenu.innerHTML = html;
+
+            // Keep menu on screen
+            const menuWidth = 230;
+            const menuHeight = 260;
+            elementMenu.style.left = Math.min(x, window.innerWidth - menuWidth) + 'px';
+            elementMenu.style.top = Math.min(y, window.innerHeight - menuHeight) + 'px';
+            elementMenu.classList.add('active');
+        }
+
+        elementMenu.addEventListener('click', function(e) {
+            const btn = e.target.closest('button');
+            if (!btn || !menuTarget) return;
+            const action = btn.dataset.action;
+
+            if (action === 'edit') {
+                menuTarget.contentEditable = true;
+                menuTarget.focus();
+                closeElementMenu();
+            } else if (action === 'delete') {
+                menuTarget.remove();
+                closeElementMenu();
+            } else if (action === 'image') {
+                elementImageInput.click();
+            } else if (action === 'done') {
+                closeElementMenu();
             }
         });
 
-        // Finish
+        elementMenu.addEventListener('input', function(e) {
+            if (e.target.dataset.action === 'opacity' && menuTarget) {
+                const v = parseFloat(e.target.value);
+                // 1 on the slider = fully disappeared, 0 = fully visible
+                menuTarget.style.opacity = (1 - v).toString();
+            }
+        });
+
+        elementImageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file && menuTarget) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    menuTarget.style.backgroundImage = `url(${event.target.result})`;
+                    menuTarget.style.backgroundSize = 'cover';
+                    menuTarget.style.backgroundPosition = 'center';
+                };
+                reader.readAsDataURL(file);
+            }
+            elementImageInput.value = '';
+        });
+
+        // Click anywhere outside the menu closes it
+        document.addEventListener('click', function(e) {
+            if (elementMenu.classList.contains('active') &&
+                !elementMenu.contains(e.target) &&
+                e.target !== menuTarget) {
+                closeElementMenu();
+            }
+        });
+
+        // ---------- Finish / export ----------
         finishBtn.addEventListener('click', function() {
             editMode = false;
             heroSection.classList.remove('edit-mode');
-            
+            closeElementMenu();
+
             document.querySelectorAll('.editable-text').forEach(el => {
                 el.contentEditable = false;
             });
-            
+
             document.querySelectorAll('.editable-element').forEach(el => {
                 el.classList.remove('selected');
+                el.contentEditable = false;
             });
-            
+
             editModeBtn.style.display = 'block';
             finishBtn.style.display = 'none';
 
