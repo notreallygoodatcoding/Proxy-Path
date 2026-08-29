@@ -15,6 +15,7 @@
             text-align: center;
             position: relative;
             overflow-x: hidden;
+            min-height: 100vh;
         }
 
         /* Decorative dots background (starfield) */
@@ -46,6 +47,182 @@
             z-index: 1;
         }
 
+        /* Developer Badge in top right corner */
+        .developer-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            border: 2px solid #64b5f6;
+            color: #64b5f6;
+            padding: 15px 25px;
+            border-radius: 8px;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(100, 181, 246, 0.5);
+            font-weight: bold;
+            align-items: center;
+            gap: 15px;
+            text-shadow: 0 0 10px rgba(100, 181, 246, 0.6);
+        }
+
+        .developer-badge.active {
+            display: flex;
+        }
+
+        .badge-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .timer-display {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #ff6b6b;
+            min-width: 60px;
+        }
+
+        /* Login Panel Overlay */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .login-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        /* Login Panel */
+        .login-panel {
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            border: 2px solid #64b5f6;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(100, 181, 246, 0.5);
+            width: 90%;
+            max-width: 400px;
+            transform: translateY(100vh);
+            animation: slideUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes slideUp {
+            0% {
+                transform: translateY(100vh);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .login-panel h2 {
+            color: #64b5f6;
+            margin-top: 0;
+            text-shadow: 0 0 10px rgba(100, 181, 246, 0.6);
+            font-size: 1.8rem;
+            letter-spacing: 1px;
+        }
+
+        .form-group {
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            color: #b0bec5;
+            margin-bottom: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #64b5f6;
+            background-color: rgba(10, 14, 39, 0.8);
+            color: #64b5f6;
+            border-radius: 5px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(100, 181, 246, 0.8);
+            border-color: #90caf9;
+        }
+
+        .form-group input::placeholder {
+            color: #64b5f6;
+            opacity: 0.5;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #0073e6 0%, #0056cc 100%);
+            color: white;
+            border: 1px solid #64b5f6;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 20px;
+        }
+
+        .login-button:hover {
+            box-shadow: 0 0 20px rgba(100, 181, 246, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            display: none;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* Keyframe animation for pop-up effect */
+        @keyframes popUpAndFade {
+            0% {
+                opacity: 0;
+                transform: translateY(100vh) scale(0.5);
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
         /* The main container with your space style background */
         .hero-section {
             background: linear-gradient(rgba(10, 14, 39, 0.5), rgba(10, 14, 39, 0.95)), 
@@ -54,6 +231,12 @@
             padding: 80px 20px;
             border-bottom: 3px solid #64b5f6;
             box-shadow: 0 0 30px rgba(100, 181, 246, 0.3);
+            animation: popUpAndFade 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
 
         /* Styling for the text elements with space theme */
@@ -65,6 +248,7 @@
             text-transform: uppercase;
             font-weight: bold;
             text-shadow: 0 0 10px rgba(100, 181, 246, 0.6);
+            animation: popUpAndFade 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
         .main-title {
@@ -74,6 +258,7 @@
             letter-spacing: 2px;
             color: #ffffff;
             text-shadow: 0 0 20px rgba(100, 181, 246, 0.5);
+            animation: popUpAndFade 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
         .announcement {
@@ -83,6 +268,7 @@
             max-width: 800px;
             margin: 0 auto 40px auto;
             line-height: 1.4;
+            animation: popUpAndFade 1.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
         .sub-time {
@@ -90,6 +276,7 @@
             color: #64b5f6;
             font-weight: bold;
             text-shadow: 0 0 10px rgba(100, 181, 246, 0.5);
+            animation: popUpAndFade 2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
         /* Lower section for the main header */
@@ -101,6 +288,7 @@
             color: #64b5f6;
             text-shadow: 0 0 15px rgba(100, 181, 246, 0.4);
             padding: 20px;
+            animation: popUpAndFade 2.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
         .footer-heading::before {
@@ -118,14 +306,143 @@
 </head>
 <body>
 
+    <!-- Developer Badge -->
+    <div class="developer-badge" id="developerBadge">
+        <span class="badge-label">🔐 DEVELOPER</span>
+        <span class="timer-display" id="timerDisplay">10:00:00</span>
+    </div>
+
+    <!-- Login Panel Overlay -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-panel">
+            <h2>Developer Access</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter password" required>
+                </div>
+                <button type="submit" class="login-button">Login</button>
+                <div class="error-message" id="errorMessage">Invalid credentials</div>
+            </form>
+        </div>
+    </div>
+
     <div class="hero-section">
         <div class="countdown">✦ 24Hr left ✦</div>
         <h1 class="main-title">hi</h1>
         <p class="announcement">tomorrow there will be an improved app and version</p>
         <div class="sub-time">24Hr</div>
+        <h2 class="footer-heading">Proxy website</h2>
     </div>
 
-    <h2 class="footer-heading">Proxy website</h2>
+    <script>
+        // Developer credentials
+        const DEVELOPER_USERNAME = "X4ZQ3";
+        const DEVELOPER_PASSWORD = "1991";
+        const SESSION_DURATION = 10 * 60 * 60 * 1000; // 10 hours in milliseconds
+
+        const loginOverlay = document.getElementById('loginOverlay');
+        const loginForm = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const errorMessage = document.getElementById('errorMessage');
+        const developerBadge = document.getElementById('developerBadge');
+        const timerDisplay = document.getElementById('timerDisplay');
+
+        // Show login panel when page loads
+        window.addEventListener('load', function() {
+            loginOverlay.classList.add('active');
+        });
+
+        // Handle login form submission
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (username === DEVELOPER_USERNAME && password === DEVELOPER_PASSWORD) {
+                // Successful login
+                errorMessage.classList.remove('show');
+                loginOverlay.classList.remove('active');
+                developerBadge.classList.add('active');
+                
+                // Store session start time
+                const sessionStartTime = Date.now();
+                localStorage.setItem('developerSessionStart', sessionStartTime);
+                
+                // Start the countdown timer
+                startCountdownTimer();
+                
+                // Clear form
+                loginForm.reset();
+            } else {
+                // Failed login
+                errorMessage.classList.add('show');
+                passwordInput.value = '';
+                usernameInput.focus();
+            }
+        });
+
+        // Countdown timer function
+        function startCountdownTimer() {
+            const updateTimer = function() {
+                const sessionStartTime = parseInt(localStorage.getItem('developerSessionStart'));
+                const elapsedTime = Date.now() - sessionStartTime;
+                const remainingTime = SESSION_DURATION - elapsedTime;
+
+                if (remainingTime <= 0) {
+                    // Session expired
+                    developerBadge.classList.remove('active');
+                    localStorage.removeItem('developerSessionStart');
+                    timerDisplay.textContent = '00:00:00';
+                    clearInterval(timerInterval);
+                } else {
+                    // Convert remaining time to hours, minutes, seconds
+                    const hours = Math.floor(remainingTime / (1000 * 60 * 60));
+                    const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
+                    
+                    timerDisplay.textContent = 
+                        String(hours).padStart(2, '0') + ':' + 
+                        String(minutes).padStart(2, '0') + ':' + 
+                        String(seconds).padStart(2, '0');
+                }
+            };
+
+            // Update immediately
+            updateTimer();
+            
+            // Update every second
+            const timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        // Check if user has an active session on page load
+        window.addEventListener('load', function() {
+            const sessionStartTime = localStorage.getItem('developerSessionStart');
+            if (sessionStartTime) {
+                const sessionStart = parseInt(sessionStartTime);
+                const elapsedTime = Date.now() - sessionStart;
+                
+                if (elapsedTime < SESSION_DURATION) {
+                    // Session still valid
+                    loginOverlay.classList.remove('active');
+                    developerBadge.classList.add('active');
+                    startCountdownTimer();
+                } else {
+                    // Session expired
+                    localStorage.removeItem('developerSessionStart');
+                    loginOverlay.classList.add('active');
+                }
+            } else {
+                loginOverlay.classList.add('active');
+            }
+        });
+    </script>
 
 </body>
 </html>
