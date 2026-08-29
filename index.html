@@ -104,7 +104,7 @@
             opacity: 1;
         }
 
-        /* Login Panel */
+        /* Login Panel - Only this slides up */
         .login-panel {
             background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
             border: 2px solid #64b5f6;
@@ -318,11 +318,15 @@
             <h2>Developer Access</h2>
             <form id="loginForm">
                 <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter username" required>
+                </div>
+                <div class="form-group">
                     <label for="password">Password</label>
                     <input type="password" id="password" placeholder="Enter password" required>
                 </div>
                 <button type="submit" class="login-button">Login</button>
-                <div class="error-message" id="errorMessage">Invalid password</div>
+                <div class="error-message" id="errorMessage">Invalid credentials</div>
             </form>
         </div>
     </div>
@@ -336,13 +340,15 @@
     </div>
 
     <script>
-        // Developer access trigger and password
+        // Developer access trigger and credentials
         const TRIGGER_CODE = "1991"; // Type this anywhere to trigger login
-        const DEVELOPER_PASSWORD = "beta tester"; // Password to authenticate
+        const DEVELOPER_USERNAME = "X4ZQ3";
+        const DEVELOPER_PASSWORD = "beta tester";
         const SESSION_DURATION = 10 * 60 * 60 * 1000; // 10 hours in milliseconds
 
         const loginOverlay = document.getElementById('loginOverlay');
         const loginForm = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
         const errorMessage = document.getElementById('errorMessage');
         const developerBadge = document.getElementById('developerBadge');
@@ -371,8 +377,9 @@
 
         function showLoginPanel() {
             loginOverlay.classList.add('active');
-            passwordInput.focus();
+            usernameInput.focus();
             errorMessage.classList.remove('show');
+            usernameInput.value = '';
             passwordInput.value = '';
         }
 
@@ -380,9 +387,10 @@
         loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
+            const username = usernameInput.value.trim();
             const password = passwordInput.value.trim();
 
-            if (password === DEVELOPER_PASSWORD) {
+            if (username === DEVELOPER_USERNAME && password === DEVELOPER_PASSWORD) {
                 // Successful login
                 errorMessage.classList.remove('show');
                 loginOverlay.classList.remove('active');
@@ -401,7 +409,7 @@
                 // Failed login
                 errorMessage.classList.add('show');
                 passwordInput.value = '';
-                passwordInput.focus();
+                usernameInput.focus();
             }
         });
 
