@@ -5,20 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ProxyPathz</title>
     <style>
-        /* Reset margins and set the dark, purple-themed background */
-        body {
+        * {
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #0d0614; /* Deep dark purple/black background */
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background-color: #0a0a0a;
             color: #ffffff;
-            text-align: center;
+            line-height: 1.6;
             position: relative;
             overflow-x: hidden;
             min-height: 100vh;
         }
 
-        /* Decorative dots background (starfield) */
+        /* Minimal grid background */
         body::before {
             content: '';
             position: fixed;
@@ -27,16 +30,11 @@
             width: 100%;
             height: 100%;
             background-image: 
-                radial-gradient(1px 1px at 20px 30px, #a855f7, rgba(0,0,0,0)),
-                radial-gradient(1.5px 1.5px at 60px 70px, #c084fc, rgba(0,0,0,0)),
-                radial-gradient(1px 1px at 50px 50px, #a855f7, rgba(0,0,0,0)),
-                radial-gradient(2px 2px at 130px 80px, #c084fc, rgba(0,0,0,0)),
-                radial-gradient(1px 1px at 90px 10px, #a855f7, rgba(0,0,0,0));
-            background-repeat: repeat;
-            background-size: 200px 200px;
+                linear-gradient(0deg, transparent 24%, rgba(168, 85, 247, 0.05) 25%, rgba(168, 85, 247, 0.05) 26%, transparent 27%, transparent 74%, rgba(168, 85, 247, 0.05) 75%, rgba(168, 85, 247, 0.05) 76%, transparent 77%, transparent),
+                linear-gradient(90deg, transparent 24%, rgba(168, 85, 247, 0.05) 25%, rgba(168, 85, 247, 0.05) 26%, transparent 27%, transparent 74%, rgba(168, 85, 247, 0.05) 75%, rgba(168, 85, 247, 0.05) 76%, transparent 77%, transparent);
+            background-size: 50px 50px;
             pointer-events: none;
             z-index: 0;
-            opacity: 0.8;
         }
 
         body > * {
@@ -44,24 +42,102 @@
             z-index: 1;
         }
 
+        /* Hero Section */
+        .hero-section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0033 100%);
+            border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+            position: relative;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-section .countdown {
+            font-size: 0.9rem;
+            color: #a855f7;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+
+        .hero-section .main-title {
+            font-size: clamp(3rem, 10vw, 6rem);
+            font-weight: 700;
+            margin-bottom: 20px;
+            letter-spacing: -2px;
+            line-height: 1.1;
+        }
+
+        .hero-section .announcement {
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            color: #c0c0c0;
+            font-weight: 400;
+            margin-bottom: 60px;
+            line-height: 1.5;
+        }
+
+        .hero-section .sub-time {
+            font-size: 1.1rem;
+            color: #a855f7;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 40px;
+        }
+
+        .hero-section .footer-heading {
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: -1px;
+            color: #ffffff;
+        }
+
+        /* Editable Text Styling */
+        .editable-text {
+            transition: all 0.2s ease;
+            cursor: default;
+        }
+
+        .edit-mode .editable-text {
+            border: 2px dashed rgba(168, 85, 247, 0.4);
+            padding: 4px 8px;
+            cursor: text;
+            border-radius: 4px;
+        }
+
+        .edit-mode .editable-text:hover {
+            background-color: rgba(168, 85, 247, 0.05);
+            border-color: rgba(168, 85, 247, 0.8);
+        }
+
         /* Developer Badge */
         .developer-badge {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, #4a157d 0%, #6b21a8 100%);
-            border: 2px solid #a855f7;
-            color: #a855f7;
-            padding: 15px 25px;
-            border-radius: 8px;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            color: #ffffff;
+            padding: 12px 20px;
+            border-radius: 50px;
             display: none;
             z-index: 900;
-            box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
-            font-weight: bold;
+            box-shadow: 0 8px 32px rgba(168, 85, 247, 0.2);
+            font-weight: 600;
             align-items: center;
-            gap: 15px;
-            text-shadow: 0 0 10px rgba(168, 85, 247, 0.6);
+            gap: 12px;
             cursor: pointer;
+            backdrop-filter: blur(10px);
         }
 
         .developer-badge.active {
@@ -69,58 +145,63 @@
         }
 
         .badge-label {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         .timer-display {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #ff6b6b;
-            min-width: 60px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #ffd700;
+            min-width: 70px;
+            font-family: 'Courier New', monospace;
         }
 
         .badge-toggle {
-            cursor: pointer;
             font-size: 1.2rem;
             user-select: none;
+            margin-left: 5px;
         }
 
         /* Developer Panel */
         .developer-panel {
             position: fixed;
-            top: 100px;
-            right: -400px;
+            bottom: 100px;
+            right: -420px;
             width: 400px;
-            height: calc(100vh - 120px);
-            background: linear-gradient(135deg, #4a157d 0%, #2d0a4e 100%);
-            border: 2px solid #a855f7;
-            border-radius: 8px;
-            box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
-            z-index: 900;
-            transition: right 0.3s ease;
+            max-height: 70vh;
+            background: rgba(13, 6, 20, 0.95);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            z-index: 890;
+            transition: right 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            backdrop-filter: blur(10px);
         }
 
         .developer-panel.open {
-            right: 20px;
+            right: 30px;
         }
 
         .panel-header {
-            padding: 15px;
-            border-bottom: 2px solid #a855f7;
+            padding: 20px;
+            border-bottom: 1px solid rgba(168, 85, 247, 0.2);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-shrink: 0;
         }
 
         .panel-header h2 {
             margin: 0;
             color: #a855f7;
-            font-size: 1.2rem;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
         .close-btn {
@@ -129,41 +210,52 @@
             color: #a855f7;
             font-size: 1.5rem;
             cursor: pointer;
-            padding: 0 5px;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .close-btn:hover {
+            background-color: rgba(168, 85, 247, 0.1);
         }
 
         .panel-content {
             flex: 1;
             overflow-y: auto;
-            padding: 15px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 20px;
         }
 
         .panel-section {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
 
         .panel-section label {
             color: #a855f7;
-            font-weight: bold;
-            font-size: 0.9rem;
+            font-weight: 600;
+            font-size: 0.85rem;
             text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .toggle-switch {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
 
         .switch {
             position: relative;
-            display: inline-block;
-            width: 50px;
+            width: 48px;
             height: 24px;
         }
 
@@ -180,10 +272,10 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #2d0a4e;
-            transition: 0.4s;
+            background-color: rgba(168, 85, 247, 0.2);
             border-radius: 24px;
-            border: 1px solid #a855f7;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            transition: 0.3s;
         }
 
         .slider:before {
@@ -194,60 +286,66 @@
             left: 3px;
             bottom: 3px;
             background-color: #a855f7;
-            transition: 0.4s;
             border-radius: 50%;
+            transition: 0.3s;
         }
 
         input:checked + .slider {
             background-color: #a855f7;
+            border-color: #a855f7;
         }
 
         input:checked + .slider:before {
-            transform: translateX(26px);
-            background-color: #2d0a4e;
+            transform: translateX(24px);
+            background-color: #0a0a0a;
         }
 
         .shape-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            gap: 10px;
         }
 
         .shape-btn {
-            padding: 10px;
-            background: linear-gradient(135deg, #6b21a8 0%, #7e22ce 100%);
-            border: 1px solid #a855f7;
+            padding: 12px;
+            background: rgba(168, 85, 247, 0.1);
+            border: 1px solid rgba(168, 85, 247, 0.3);
             color: #a855f7;
-            border-radius: 5px;
+            border-radius: 6px;
             cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            transition: all 0.2s;
         }
 
         .shape-btn:hover {
-            box-shadow: 0 0 15px rgba(168, 85, 247, 0.6);
-            transform: translateY(-2px);
+            background: rgba(168, 85, 247, 0.2);
+            border-color: #a855f7;
+        }
+
+        .shape-btn:active {
+            transform: scale(0.95);
         }
 
         .color-picker-group {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             align-items: center;
         }
 
         .color-picker-group input[type="color"] {
-            width: 50px;
+            width: 48px;
             height: 40px;
-            border: 1px solid #a855f7;
-            border-radius: 5px;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 6px;
             cursor: pointer;
+            background-color: #a855f7;
         }
 
         .file-input-wrapper {
             position: relative;
             overflow: hidden;
-            display: inline-block;
-            width: 100%;
         }
 
         .file-input-wrapper input[type="file"] {
@@ -257,38 +355,46 @@
 
         .file-input-label {
             display: block;
-            padding: 10px;
-            background: linear-gradient(135deg, #6b21a8 0%, #7e22ce 100%);
-            border: 1px solid #a855f7;
+            padding: 12px;
+            background: rgba(168, 85, 247, 0.1);
+            border: 1px solid rgba(168, 85, 247, 0.3);
             color: #a855f7;
-            border-radius: 5px;
+            border-radius: 6px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 600;
             text-align: center;
-            transition: all 0.3s ease;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            transition: all 0.2s;
         }
 
         .file-input-label:hover {
-            box-shadow: 0 0 15px rgba(168, 85, 247, 0.6);
-            transform: translateY(-2px);
+            background: rgba(168, 85, 247, 0.2);
+            border-color: #a855f7;
         }
 
         .edit-button, .finish-button, .copy-button {
             padding: 12px;
             background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
             border: 1px solid #a855f7;
-            color: #2d0a4e;
-            border-radius: 5px;
+            color: #0a0a0a;
+            border-radius: 6px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 700;
             text-transform: uppercase;
-            transition: all 0.3s ease;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            transition: all 0.2s;
             margin-top: auto;
         }
 
         .edit-button:hover, .finish-button:hover, .copy-button:hover {
-            box-shadow: 0 0 20px rgba(168, 85, 247, 0.8);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
             transform: translateY(-2px);
+        }
+
+        .edit-button:active, .finish-button:active, .copy-button:active {
+            transform: translateY(0);
         }
 
         /* Edit Mode */
@@ -296,39 +402,34 @@
             position: relative;
         }
 
-        .edit-mode .editable-text {
-            border: 2px dashed #a855f7;
-            padding: 5px;
-            cursor: text;
-        }
-
         .editable-element {
             position: absolute;
-            border: 2px dashed #a855f7;
+            border: 2px dashed rgba(168, 85, 247, 0.5);
             cursor: move;
             touch-action: none;
             box-sizing: border-box;
+            transition: border-color 0.2s;
         }
 
         .editable-element.selected {
             border: 2px solid #a855f7;
-            box-shadow: 0 0 10px rgba(168, 85, 247, 0.8);
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.5);
         }
 
         .resize-handle {
             position: absolute;
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             background: #a855f7;
-            border: 1px solid #2d0a4e;
+            border: 1px solid #0a0a0a;
             border-radius: 50%;
             cursor: nwse-resize;
         }
 
-        .resize-handle.tl { top: -5px; left: -5px; cursor: nw-resize; }
-        .resize-handle.tr { top: -5px; right: -5px; cursor: ne-resize; }
-        .resize-handle.bl { bottom: -5px; left: -5px; cursor: sw-resize; }
-        .resize-handle.br { bottom: -5px; right: -5px; cursor: se-resize; }
+        .resize-handle.tl { top: -4px; left: -4px; cursor: nw-resize; }
+        .resize-handle.tr { top: -4px; right: -4px; cursor: ne-resize; }
+        .resize-handle.bl { bottom: -4px; left: -4px; cursor: sw-resize; }
+        .resize-handle.br { bottom: -4px; right: -4px; cursor: se-resize; }
 
         /* Code Modal */
         .code-modal {
@@ -338,11 +439,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.9);
             z-index: 1000;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            backdrop-filter: blur(4px);
         }
 
         .code-modal.active {
@@ -350,20 +452,21 @@
         }
 
         .code-container {
-            background: #1a0033;
-            border: 2px solid #a855f7;
-            border-radius: 8px;
+            background: rgba(10, 10, 10, 0.95);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 12px;
             max-width: 900px;
             width: 100%;
-            max-height: 80vh;
+            max-height: 85vh;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 0 40px rgba(168, 85, 247, 0.6);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
         }
 
         .code-header {
-            padding: 15px;
-            border-bottom: 2px solid #a855f7;
+            padding: 20px;
+            border-bottom: 1px solid rgba(168, 85, 247, 0.2);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -372,6 +475,10 @@
         .code-header h3 {
             color: #a855f7;
             margin: 0;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .code-close {
@@ -380,23 +487,34 @@
             color: #a855f7;
             font-size: 1.5rem;
             cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .code-close:hover {
+            background-color: rgba(168, 85, 247, 0.1);
         }
 
         .code-content {
             flex: 1;
             overflow-y: auto;
-            padding: 15px;
+            padding: 20px;
         }
 
         .code-display {
-            background: #0d0614;
-            border: 1px solid #a855f7;
-            padding: 15px;
-            border-radius: 5px;
-            font-family: 'Courier New', monospace;
+            background: #000000;
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Courier New', monospace;
             color: #a855f7;
             font-size: 0.85rem;
-            line-height: 1.4;
+            line-height: 1.5;
             white-space: pre-wrap;
             word-break: break-all;
             max-height: 100%;
@@ -404,10 +522,10 @@
         }
 
         .code-footer {
-            padding: 15px;
-            border-top: 2px solid #a855f7;
+            padding: 20px;
+            border-top: 1px solid rgba(168, 85, 247, 0.2);
             display: flex;
-            gap: 10px;
+            gap: 12px;
         }
 
         .copy-button {
@@ -422,13 +540,14 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.8);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 999;
             opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.3s;
+            backdrop-filter: blur(4px);
         }
 
         .login-overlay.active {
@@ -437,23 +556,23 @@
         }
 
         .login-panel {
-            background: linear-gradient(135deg, #4a157d 0%, #6b21a8 100%);
-            border: 2px solid #a855f7;
+            background: rgba(13, 6, 20, 0.95);
+            border: 1px solid rgba(168, 85, 247, 0.3);
             padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+            border-radius: 12px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
             width: 90%;
             max-width: 400px;
-            transform: translateY(100vh);
-            animation: slideUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            backdrop-filter: blur(10px);
         }
 
         @keyframes slideUp {
-            0% {
-                transform: translateY(100vh);
+            from {
+                transform: translateY(40px);
                 opacity: 0;
             }
-            100% {
+            to {
                 transform: translateY(0);
                 opacity: 1;
             }
@@ -461,154 +580,130 @@
 
         .login-panel h2 {
             color: #a855f7;
-            margin-top: 0;
-            text-shadow: 0 0 10px rgba(168, 85, 247, 0.6);
-            font-size: 1.8rem;
-            letter-spacing: 1px;
+            margin: 0 0 30px 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -1px;
         }
 
         .form-group {
-            margin: 20px 0;
-            text-align: left;
+            margin-bottom: 20px;
         }
 
         .form-group label {
             display: block;
-            color: #b0bec5;
+            color: #a855f7;
             margin-bottom: 8px;
-            font-weight: bold;
+            font-weight: 600;
+            font-size: 0.85rem;
             text-transform: uppercase;
-            font-size: 0.9rem;
             letter-spacing: 1px;
         }
 
         .form-group input {
             width: 100%;
             padding: 12px;
-            border: 1px solid #a855f7;
-            background-color: rgba(13, 6, 20, 0.8);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            background-color: rgba(168, 85, 247, 0.05);
             color: #a855f7;
-            border-radius: 5px;
+            border-radius: 6px;
             font-size: 1rem;
-            box-sizing: border-box;
-            transition: all 0.3s ease;
+            transition: all 0.2s;
         }
 
         .form-group input:focus {
             outline: none;
-            box-shadow: 0 0 10px rgba(168, 85, 247, 0.8);
-            border-color: #c084fc;
+            box-shadow: 0 0 12px rgba(168, 85, 247, 0.3);
+            border-color: #a855f7;
+            background-color: rgba(168, 85, 247, 0.1);
         }
 
         .form-group input::placeholder {
-            color: #a855f7;
-            opacity: 0.5;
+            color: rgba(168, 85, 247, 0.5);
         }
 
         .login-button {
             width: 100%;
             padding: 12px;
             background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
-            color: #2d0a4e;
-            border: 1px solid #a855f7;
-            border-radius: 5px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            color: #0a0a0a;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
             margin-top: 20px;
         }
 
         .login-button:hover {
-            box-shadow: 0 0 20px rgba(168, 85, 247, 0.6);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
             transform: translateY(-2px);
         }
 
         .error-message {
-            color: #ff6b6b;
-            font-size: 0.9rem;
-            margin-top: 10px;
+            color: #ff4444;
+            font-size: 0.85rem;
+            margin-top: 12px;
             display: none;
             text-align: center;
-            font-weight: bold;
+            font-weight: 600;
         }
 
         .error-message.show {
             display: block;
         }
 
-        /* Hero Section */
-        .hero-section {
-            background: linear-gradient(rgba(13, 6, 20, 0.4), rgba(13, 6, 20, 0.9)), 
-                        #2b0d47;
-            background-size: auto;
-            padding: 80px 20px;
-            border-bottom: 3px solid #a855f7;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
+        /* Scrollbar Styling */
+        .panel-content::-webkit-scrollbar,
+        .code-display::-webkit-scrollbar {
+            width: 6px;
         }
 
-        .countdown {
-            color: #a855f7;
-            font-size: 1.1rem;
-            letter-spacing: 1px;
-            margin-bottom: 20px;
-            text-transform: uppercase;
-            font-weight: bold;
-            text-shadow: 0 0 10px rgba(168, 85, 247, 0.6);
+        .panel-content::-webkit-scrollbar-track,
+        .code-display::-webkit-scrollbar-track {
+            background: transparent;
         }
 
-        .main-title {
-            font-size: 5rem;
-            font-weight: 300;
-            margin: 0 0 30px 0;
-            letter-spacing: 2px;
-            color: #ffffff;
-            text-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+        .panel-content::-webkit-scrollbar-thumb,
+        .code-display::-webkit-scrollbar-thumb {
+            background: rgba(168, 85, 247, 0.3);
+            border-radius: 3px;
         }
 
-        .announcement {
-            font-size: 1.8rem;
-            font-weight: 300;
-            color: #e2e8f0;
-            max-width: 800px;
-            margin: 0 auto 40px auto;
-            line-height: 1.4;
+        .panel-content::-webkit-scrollbar-thumb:hover,
+        .code-display::-webkit-scrollbar-thumb:hover {
+            background: rgba(168, 85, 247, 0.6);
         }
 
-        .sub-time {
-            font-size: 1.5rem;
-            color: #a855f7;
-            font-weight: bold;
-            text-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
-        }
+        /* Responsive */
+        @media (max-width: 600px) {
+            .developer-panel {
+                width: 100%;
+                right: -100%;
+                border-radius: 12px 12px 0 0;
+            }
 
-        .footer-heading {
-            margin-top: 60px;
-            font-size: 3rem;
-            font-weight: 400;
-            letter-spacing: 1px;
-            color: #a855f7;
-            text-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
-            padding: 20px;
-        }
+            .developer-panel.open {
+                right: 0;
+            }
 
-        .footer-heading::before {
-            content: '◆ ';
-            font-size: 0.8em;
-            color: #c084fc;
-        }
+            .developer-badge {
+                bottom: 20px;
+                right: 20px;
+                padding: 10px 16px;
+                font-size: 0.8rem;
+            }
 
-        .footer-heading::after {
-            content: ' ◆';
-            font-size: 0.8em;
-            color: #c084fc;
+            .hero-section .main-title {
+                font-size: 2.5rem;
+            }
+
+            .hero-section .announcement {
+                font-size: 1.1rem;
+            }
         }
     </style>
 </head>
@@ -616,7 +711,7 @@
 
     <!-- Developer Badge -->
     <div class="developer-badge" id="developerBadge">
-        <span class="badge-label">🔐 DEVELOPER</span>
+        <span class="badge-label">Build</span>
         <span class="timer-display" id="timerDisplay">10:00:00</span>
         <span class="badge-toggle" id="badgeToggle">></span>
     </div>
@@ -624,7 +719,7 @@
     <!-- Developer Panel -->
     <div class="developer-panel" id="developerPanel">
         <div class="panel-header">
-            <h2>Edit Tools</h2>
+            <h2>Build Tools</h2>
             <button class="close-btn" id="closePanel">×</button>
         </div>
         <div class="panel-content">
@@ -639,32 +734,32 @@
             </div>
 
             <div class="panel-section">
-                <label>Add Shape</label>
+                <label>Add Element</label>
                 <div class="shape-grid">
                     <button class="shape-btn" data-shape="rectangle">Rectangle</button>
                     <button class="shape-btn" data-shape="circle">Circle</button>
-                    <button class="shape-btn" data-shape="text">Text Box</button>
+                    <button class="shape-btn" data-shape="text">Text</button>
                     <button class="shape-btn" data-shape="button">Button</button>
                 </div>
             </div>
 
             <div class="panel-section">
-                <label>Shape Color</label>
+                <label>Color</label>
                 <div class="color-picker-group">
                     <input type="color" id="shapeColor" value="#a855f7">
                 </div>
             </div>
 
             <div class="panel-section">
-                <label>Button Image</label>
+                <label>Image</label>
                 <div class="file-input-wrapper">
                     <input type="file" id="imageInput" accept="image/*">
-                    <label for="imageInput" class="file-input-label">Upload Image</label>
+                    <label for="imageInput" class="file-input-label">Upload</label>
                 </div>
             </div>
 
-            <button class="edit-button" id="editModeBtn">Enter Edit Mode</button>
-            <button class="finish-button" id="finishBtn" style="display: none;">Finish Editing</button>
+            <button class="edit-button" id="editModeBtn">Enter Edit</button>
+            <button class="finish-button" id="finishBtn" style="display: none;">Export Code</button>
         </div>
     </div>
 
@@ -672,22 +767,22 @@
     <div class="code-modal" id="codeModal">
         <div class="code-container">
             <div class="code-header">
-                <h3>Updated HTML Code</h3>
+                <h3>Your Code</h3>
                 <button class="code-close" id="closeCode">×</button>
             </div>
             <div class="code-content">
                 <div class="code-display" id="codeDisplay"></div>
             </div>
             <div class="code-footer">
-                <button class="copy-button" id="copyCodeBtn">Copy to Clipboard</button>
+                <button class="copy-button" id="copyCodeBtn">Copy Code</button>
             </div>
         </div>
     </div>
 
-    <!-- Login Panel Overlay -->
+    <!-- Login Panel -->
     <div class="login-overlay" id="loginOverlay">
-        <div class="login-panel" style="position: relative;">
-            <h2>Developer Access</h2>
+        <div class="login-panel">
+            <h2>Developer</h2>
             <form id="loginForm">
                 <div class="form-group">
                     <label for="username">Username</label>
@@ -703,23 +798,24 @@
         </div>
     </div>
 
+    <!-- Hero Section -->
     <div class="hero-section" id="heroSection">
-        <div class="countdown editable-text" contenteditable="false">24Hr left</div>
-        <h1 class="main-title editable-text" contenteditable="false">hi</h1>
-        <p class="announcement editable-text" contenteditable="false">tomorrow there will be an improved app and version</p>
-        <div class="sub-time editable-text" contenteditable="false">24Hr</div>
-        <h2 class="footer-heading editable-text" contenteditable="false">Proxy website</h2>
+        <div class="hero-content">
+            <div class="countdown editable-text" contenteditable="false">24 Hours</div>
+            <h1 class="main-title editable-text" contenteditable="false">ProxyPathz</h1>
+            <p class="announcement editable-text" contenteditable="false">Build websites your way. No limits, no templates.</p>
+            <div class="sub-time editable-text" contenteditable="false">Coming Soon</div>
+            <h2 class="footer-heading editable-text" contenteditable="false">Build</h2>
+        </div>
     </div>
 
     <script>
-        // Developer access trigger and credentials
         const TRIGGER_CODE = "1991";
         const DEVELOPER_USERNAME = "X4ZQ3";
         const DEVELOPER_PASSWORD = "beta tester";
         const SESSION_DURATION = 10 * 60 * 60 * 1000;
-        const RESET_DELAY = 5000; // 5 seconds
+        const RESET_DELAY = 5000;
 
-        // DOM Elements
         const loginOverlay = document.getElementById('loginOverlay');
         const loginForm = document.getElementById('loginForm');
         const usernameInput = document.getElementById('username');
@@ -745,31 +841,26 @@
         let resetTimer = null;
         let editMode = false;
         let selectedElement = null;
-        let draggedElement = null;
         let uploadedImage = null;
         const GRID_SIZE = 10;
 
-        // Trigger code detection with 5-second reset delay
+        // Trigger code detection
         document.addEventListener('keydown', function(e) {
             if (e.key.length === 1) {
                 triggerBuffer += e.key;
                 
-                // Clear existing reset timer
                 if (resetTimer) {
                     clearTimeout(resetTimer);
                 }
 
-                // Set new reset timer for 5 seconds
                 resetTimer = setTimeout(() => {
                     triggerBuffer = "";
                 }, RESET_DELAY);
 
-                // Keep buffer at reasonable size
                 if (triggerBuffer.length > TRIGGER_CODE.length) {
                     triggerBuffer = triggerBuffer.slice(-TRIGGER_CODE.length);
                 }
 
-                // Check if trigger code was typed
                 if (triggerBuffer.includes(TRIGGER_CODE)) {
                     showLoginPanel();
                     triggerBuffer = "";
@@ -788,7 +879,7 @@
             passwordInput.value = '';
         }
 
-        // Login form submission
+        // Login
         loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const username = usernameInput.value.trim();
@@ -809,13 +900,12 @@
             }
         });
 
-        // Badge toggle panel
+        // Panel toggle
         badgeToggle.addEventListener('click', function() {
             developerPanel.classList.toggle('open');
             badgeToggle.textContent = developerPanel.classList.contains('open') ? '<' : '>';
         });
 
-        // Close panel
         closePanel.addEventListener('click', function() {
             developerPanel.classList.remove('open');
             badgeToggle.textContent = '>';
@@ -862,13 +952,12 @@
             }
         });
 
-        // Edit Mode
+        // Edit mode
         editModeBtn.addEventListener('click', function() {
             editMode = true;
             heroSection.style.position = 'relative';
             heroSection.classList.add('edit-mode');
             
-            // Enable editing of existing text
             document.querySelectorAll('.editable-text').forEach(el => {
                 el.contentEditable = true;
             });
@@ -891,8 +980,8 @@
             element.className = 'editable-element selected';
             element.style.left = '100px';
             element.style.top = '100px';
-            element.style.width = '100px';
-            element.style.height = '100px';
+            element.style.width = '120px';
+            element.style.height = '120px';
             element.style.backgroundColor = shapeColor.value;
             element.style.position = 'absolute';
             element.style.zIndex = '10';
@@ -900,12 +989,13 @@
             if (type === 'circle') {
                 element.style.borderRadius = '50%';
             } else if (type === 'text') {
-                element.textContent = 'Click to edit';
+                element.textContent = 'Text';
                 element.style.color = '#ffffff';
                 element.style.display = 'flex';
                 element.style.alignItems = 'center';
                 element.style.justifyContent = 'center';
                 element.style.fontSize = '14px';
+                element.style.fontWeight = '600';
                 element.contentEditable = true;
             } else if (type === 'button') {
                 element.textContent = 'Button';
@@ -913,17 +1003,17 @@
                 element.style.display = 'flex';
                 element.style.alignItems = 'center';
                 element.style.justifyContent = 'center';
-                element.style.color = '#fff';
+                element.style.color = '#0a0a0a';
                 element.style.border = 'none';
-                element.style.borderRadius = '5px';
-                element.style.fontWeight = 'bold';
+                element.style.borderRadius = '6px';
+                element.style.fontWeight = '600';
+                element.style.fontSize = '14px';
                 if (uploadedImage) {
                     element.style.backgroundImage = `url(${uploadedImage})`;
                     element.style.backgroundSize = 'cover';
                 }
             }
 
-            // Add resize handles
             ['tl', 'tr', 'bl', 'br'].forEach(pos => {
                 const handle = document.createElement('div');
                 handle.className = `resize-handle ${pos}`;
@@ -1018,12 +1108,11 @@
             }
         });
 
-        // Finish editing
+        // Finish
         finishBtn.addEventListener('click', function() {
             editMode = false;
             heroSection.classList.remove('edit-mode');
             
-            // Disable editing of text
             document.querySelectorAll('.editable-text').forEach(el => {
                 el.contentEditable = false;
             });
@@ -1035,24 +1124,21 @@
             editModeBtn.style.display = 'block';
             finishBtn.style.display = 'none';
 
-            // Generate HTML code
             const htmlCode = heroSection.innerHTML;
             codeDisplay.textContent = htmlCode;
             codeModal.classList.add('active');
         });
 
-        // Code modal close
         closeCode.addEventListener('click', function() {
             codeModal.classList.remove('active');
         });
 
-        // Copy code
         copyCodeBtn.addEventListener('click', function() {
             const code = codeDisplay.textContent;
             navigator.clipboard.writeText(code).then(() => {
                 copyCodeBtn.textContent = 'Copied!';
                 setTimeout(() => {
-                    copyCodeBtn.textContent = 'Copy to Clipboard';
+                    copyCodeBtn.textContent = 'Copy Code';
                 }, 2000);
             });
         });
