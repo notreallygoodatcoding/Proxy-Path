@@ -318,15 +318,11 @@
             <h2>Developer Access</h2>
             <form id="loginForm">
                 <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" id="username" placeholder="Enter username" required>
-                </div>
-                <div class="form-group">
                     <label for="password">Password</label>
                     <input type="password" id="password" placeholder="Enter password" required>
                 </div>
                 <button type="submit" class="login-button">Login</button>
-                <div class="error-message" id="errorMessage">Invalid credentials</div>
+                <div class="error-message" id="errorMessage">Invalid password</div>
             </form>
         </div>
     </div>
@@ -340,32 +336,53 @@
     </div>
 
     <script>
-        // Developer credentials
-        const DEVELOPER_USERNAME = "X4ZQ3";
-        const DEVELOPER_PASSWORD = "1991";
+        // Developer access trigger and password
+        const TRIGGER_CODE = "1991"; // Type this anywhere to trigger login
+        const DEVELOPER_PASSWORD = "beta tester"; // Password to authenticate
         const SESSION_DURATION = 10 * 60 * 60 * 1000; // 10 hours in milliseconds
 
         const loginOverlay = document.getElementById('loginOverlay');
         const loginForm = document.getElementById('loginForm');
-        const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
         const errorMessage = document.getElementById('errorMessage');
         const developerBadge = document.getElementById('developerBadge');
         const timerDisplay = document.getElementById('timerDisplay');
 
-        // Show login panel when page loads
-        window.addEventListener('load', function() {
-            loginOverlay.classList.add('active');
+        let triggerBuffer = "";
+
+        // Listen for keystrokes to detect trigger code
+        document.addEventListener('keydown', function(e) {
+            // Only add printable characters to buffer
+            if (e.key.length === 1) {
+                triggerBuffer += e.key;
+                
+                // Keep buffer at reasonable size
+                if (triggerBuffer.length > TRIGGER_CODE.length) {
+                    triggerBuffer = triggerBuffer.slice(-TRIGGER_CODE.length);
+                }
+                
+                // Check if trigger code was typed
+                if (triggerBuffer.includes(TRIGGER_CODE)) {
+                    showLoginPanel();
+                    triggerBuffer = ""; // Reset buffer
+                }
+            }
         });
+
+        function showLoginPanel() {
+            loginOverlay.classList.add('active');
+            passwordInput.focus();
+            errorMessage.classList.remove('show');
+            passwordInput.value = '';
+        }
 
         // Handle login form submission
         loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const username = usernameInput.value.trim();
             const password = passwordInput.value.trim();
 
-            if (username === DEVELOPER_USERNAME && password === DEVELOPER_PASSWORD) {
+            if (password === DEVELOPER_PASSWORD) {
                 // Successful login
                 errorMessage.classList.remove('show');
                 loginOverlay.classList.remove('active');
@@ -384,7 +401,7 @@
                 // Failed login
                 errorMessage.classList.add('show');
                 passwordInput.value = '';
-                usernameInput.focus();
+                passwordInput.focus();
             }
         });
 
@@ -430,16 +447,12 @@
                 
                 if (elapsedTime < SESSION_DURATION) {
                     // Session still valid
-                    loginOverlay.classList.remove('active');
                     developerBadge.classList.add('active');
                     startCountdownTimer();
                 } else {
                     // Session expired
                     localStorage.removeItem('developerSessionStart');
-                    loginOverlay.classList.add('active');
                 }
-            } else {
-                loginOverlay.classList.add('active');
             }
         });
     </script>
