@@ -102,6 +102,7 @@
             transition: right 0.3s ease;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
         .developer-panel.open {
@@ -291,8 +292,14 @@
         }
 
         /* Edit Mode */
-        .edit-mode .hero-section {
+        .edit-mode {
             position: relative;
+        }
+
+        .edit-mode .editable-text {
+            border: 2px dashed #a855f7;
+            padding: 5px;
+            cursor: text;
         }
 
         .editable-element {
@@ -300,6 +307,7 @@
             border: 2px dashed #a855f7;
             cursor: move;
             touch-action: none;
+            box-sizing: border-box;
         }
 
         .editable-element.selected {
@@ -696,11 +704,11 @@
     </div>
 
     <div class="hero-section" id="heroSection">
-        <div class="countdown">24Hr left</div>
-        <h1 class="main-title">hi</h1>
-        <p class="announcement">tomorrow there will be an improved app and version</p>
-        <div class="sub-time">24Hr</div>
-        <h2 class="footer-heading">Proxy website</h2>
+        <div class="countdown editable-text" contenteditable="false">24Hr left</div>
+        <h1 class="main-title editable-text" contenteditable="false">hi</h1>
+        <p class="announcement editable-text" contenteditable="false">tomorrow there will be an improved app and version</p>
+        <div class="sub-time editable-text" contenteditable="false">24Hr</div>
+        <h2 class="footer-heading editable-text" contenteditable="false">Proxy website</h2>
     </div>
 
     <script>
@@ -709,6 +717,7 @@
         const DEVELOPER_USERNAME = "X4ZQ3";
         const DEVELOPER_PASSWORD = "beta tester";
         const SESSION_DURATION = 10 * 60 * 60 * 1000;
+        const RESET_DELAY = 5000; // 5 seconds
 
         // DOM Elements
         const loginOverlay = document.getElementById('loginOverlay');
@@ -733,22 +742,40 @@
         const imageInput = document.getElementById('imageInput');
 
         let triggerBuffer = "";
+        let resetTimer = null;
         let editMode = false;
         let selectedElement = null;
         let draggedElement = null;
         let uploadedImage = null;
         const GRID_SIZE = 10;
 
-        // Trigger code detection
+        // Trigger code detection with 5-second reset delay
         document.addEventListener('keydown', function(e) {
             if (e.key.length === 1) {
                 triggerBuffer += e.key;
+                
+                // Clear existing reset timer
+                if (resetTimer) {
+                    clearTimeout(resetTimer);
+                }
+
+                // Set new reset timer for 5 seconds
+                resetTimer = setTimeout(() => {
+                    triggerBuffer = "";
+                }, RESET_DELAY);
+
+                // Keep buffer at reasonable size
                 if (triggerBuffer.length > TRIGGER_CODE.length) {
                     triggerBuffer = triggerBuffer.slice(-TRIGGER_CODE.length);
                 }
+
+                // Check if trigger code was typed
                 if (triggerBuffer.includes(TRIGGER_CODE)) {
                     showLoginPanel();
                     triggerBuffer = "";
+                    if (resetTimer) {
+                        clearTimeout(resetTimer);
+                    }
                 }
             }
         });
@@ -839,9 +866,15 @@
         editModeBtn.addEventListener('click', function() {
             editMode = true;
             heroSection.style.position = 'relative';
+            heroSection.classList.add('edit-mode');
+            
+            // Enable editing of existing text
+            document.querySelectorAll('.editable-text').forEach(el => {
+                el.contentEditable = true;
+            });
+            
             editModeBtn.style.display = 'none';
             finishBtn.style.display = 'block';
-            heroSection.classList.add('edit-mode');
         });
 
         // Shape buttons
@@ -862,15 +895,17 @@
             element.style.height = '100px';
             element.style.backgroundColor = shapeColor.value;
             element.style.position = 'absolute';
+            element.style.zIndex = '10';
 
             if (type === 'circle') {
                 element.style.borderRadius = '50%';
             } else if (type === 'text') {
                 element.textContent = 'Click to edit';
-                element.style.color = '#000';
+                element.style.color = '#ffffff';
                 element.style.display = 'flex';
                 element.style.alignItems = 'center';
                 element.style.justifyContent = 'center';
+                element.style.fontSize = '14px';
                 element.contentEditable = true;
             } else if (type === 'button') {
                 element.textContent = 'Button';
@@ -881,6 +916,7 @@
                 element.style.color = '#fff';
                 element.style.border = 'none';
                 element.style.borderRadius = '5px';
+                element.style.fontWeight = 'bold';
                 if (uploadedImage) {
                     element.style.backgroundImage = `url(${uploadedImage})`;
                     element.style.backgroundSize = 'cover';
@@ -901,14 +937,15 @@
 
         function selectElement(e) {
             if (!editMode) return;
-            selectedElement = e.target.closest('.editable-element');
-            if (!selectedElement) return;
             
+            const clickedElement = e.target.closest('.editable-element');
+            if (!clickedElement) return;
+            
+            selectedElement = clickedElement;
             document.querySelectorAll('.editable-element').forEach(el => el.classList.remove('selected'));
             selectedElement.classList.add('selected');
 
             if (e.target.classList.contains('resize-handle')) {
-                draggedElement = selectedElement;
                 const startX = e.clientX;
                 const startY = e.clientY;
                 const startWidth = selectedElement.offsetWidth;
@@ -922,25 +959,24 @@
                     if (pos.includes('r')) {
                         let newWidth = startWidth + deltaX;
                         if (gridSnapToggle.checked) newWidth = Math.round(newWidth / GRID_SIZE) * GRID_SIZE;
-                        selectedElement.style.width = newWidth + 'px';
+                        selectedElement.style.width = Math.max(50, newWidth) + 'px';
                     }
                     if (pos.includes('b')) {
                         let newHeight = startHeight + deltaY;
                         if (gridSnapToggle.checked) newHeight = Math.round(newHeight / GRID_SIZE) * GRID_SIZE;
-                        selectedElement.style.height = newHeight + 'px';
+                        selectedElement.style.height = Math.max(50, newHeight) + 'px';
                     }
                 }
 
                 function onMouseUp() {
                     document.removeEventListener('mousemove', onMouseMove);
                     document.removeEventListener('mouseup', onMouseUp);
-                    draggedElement = null;
                 }
 
                 document.addEventListener('mousemove', onMouseMove);
                 document.addEventListener('mouseup', onMouseUp);
+                e.preventDefault();
             } else {
-                draggedElement = selectedElement;
                 const startX = e.clientX;
                 const startY = e.clientY;
                 const startLeft = selectedElement.offsetLeft;
@@ -962,11 +998,11 @@
                 function onMouseUp() {
                     document.removeEventListener('mousemove', onMouseMove);
                     document.removeEventListener('mouseup', onMouseUp);
-                    draggedElement = null;
                 }
 
                 document.addEventListener('mousemove', onMouseMove);
                 document.addEventListener('mouseup', onMouseUp);
+                e.preventDefault();
             }
         }
 
@@ -986,10 +1022,16 @@
         finishBtn.addEventListener('click', function() {
             editMode = false;
             heroSection.classList.remove('edit-mode');
+            
+            // Disable editing of text
+            document.querySelectorAll('.editable-text').forEach(el => {
+                el.contentEditable = false;
+            });
+            
             document.querySelectorAll('.editable-element').forEach(el => {
                 el.classList.remove('selected');
-                el.removeEventListener('mousedown', selectElement);
             });
+            
             editModeBtn.style.display = 'block';
             finishBtn.style.display = 'none';
 
