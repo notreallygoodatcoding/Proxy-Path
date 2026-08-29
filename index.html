@@ -510,6 +510,24 @@
             accent-color: #a855f7;
         }
 
+        .element-menu input[type="color"] {
+            width: 100%;
+            height: 36px;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 6px;
+            cursor: pointer;
+            background: none;
+        }
+
+        .element-menu .layer-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .element-menu .layer-row button {
+            flex: 1;
+        }
+
         /* Code Modal */
         .code-modal {
             display: none;
@@ -1048,12 +1066,46 @@
         });
 
         // Existing page text: single click no longer edits anything.
-        // Double-click opens the menu (Edit Text / Delete / Transparency).
+        // First double-click turns it into a movable/resizable box (same as a shape),
+        // then opens the menu (Edit Text / Font Size / Color / Delete / Transparency / Layer).
+        function convertTextToPositioned(el) {
+            if (el.classList.contains('editable-element')) return; // already converted
+
+            const parent = el.offsetParent || heroSection;
+            const parentRect = parent.getBoundingClientRect();
+            const elRect = el.getBoundingClientRect();
+
+            const left = elRect.left - parentRect.left;
+            const top = elRect.top - parentRect.top;
+            const width = elRect.width;
+            const height = elRect.height;
+
+            el.classList.add('editable-element');
+            el.dataset.shapeType = 'pageText';
+            el.style.position = 'absolute';
+            el.style.left = left + 'px';
+            el.style.top = top + 'px';
+            el.style.width = width + 'px';
+            el.style.height = height + 'px';
+            el.style.margin = '0';
+            el.style.cursor = 'move';
+            el.style.zIndex = el.style.zIndex || '10';
+
+            ['tl', 'tr', 'bl', 'br'].forEach(pos => {
+                const handle = document.createElement('div');
+                handle.className = `resize-handle ${pos}`;
+                el.appendChild(handle);
+            });
+
+            el.addEventListener('mousedown', selectElement);
+        }
+
         document.querySelectorAll('.editable-text').forEach(el => {
             el.addEventListener('dblclick', function(e) {
                 if (!editMode) return;
                 e.stopPropagation();
-                openElementMenu(el, e.clientX, e.clientY, false);
+                convertTextToPositioned(el);
+                openElementMenu(el, e.clientX, e.clientY);
             });
             el.addEventListener('blur', function() {
                 el.contentEditable = false;
@@ -1114,7 +1166,7 @@
             element.addEventListener('mousedown', selectElement);
             element.addEventListener('dblclick', function(e) {
                 e.stopPropagation();
-                openElementMenu(element, e.clientX, e.clientY, true);
+                openElementMenu(element, e.clientX, e.clientY);
             });
             element.addEventListener('blur', function() {
                 element.contentEditable = false;
@@ -1195,31 +1247,53 @@
             }
         }
 
-        // ---------- Double-click element menu (Edit / Delete / Transparency / Image) ----------
+        // ---------- Double-click element menu (Edit / Delete / Transparency / Image / Font / Color / Layer) ----------
+        let uploadTarget = null; // survives the menu closing while the native file picker is open
+
+        function rgbToHex(rgbStr) {
+            const nums = rgbStr.match(/\d+/g);
+            if (!nums) return '#ffffff';
+            return '#' + nums.slice(0, 3).map(n => parseInt(n, 10).toString(16).padStart(2, '0')).join('');
+        }
+
         function closeElementMenu() {
             elementMenu.classList.remove('active');
             elementMenu.innerHTML = '';
             menuTarget = null;
         }
 
-        function openElementMenu(target, x, y, isShape) {
+        function openElementMenu(target, x, y) {
             menuTarget = target;
-            const type = isShape ? (target.dataset.shapeType || 'shape') : 'text';
-            const canEditText = isShape ? (type === 'text' || type === 'button') : true;
+            const type = target.dataset.shapeType || 'shape';
+            const hasText = (type === 'text' || type === 'button' || type === 'pageText');
             const currentOpacity = target.style.opacity !== '' ? parseFloat(target.style.opacity) : 1;
             const sliderValue = (1 - currentOpacity).toFixed(2);
+            const currentFontSize = parseInt(getComputedStyle(target).fontSize, 10) || 16;
+            const currentColor = rgbToHex(getComputedStyle(target).color);
 
             let html = `<div class="element-menu-title">${type}</div>`;
-            if (canEditText) {
+            if (hasText) {
                 html += `<button type="button" data-action="edit">Edit Text</button>`;
-            }
-            if (isShape) {
-                html += `<button type="button" data-action="image">Upload Image</button>`;
+                html += `
+                    <div class="transparency-row">
+                        <label>Font Size</label>
+                        <input type="range" min="10" max="96" step="1" value="${currentFontSize}" data-action="fontsize">
+                    </div>
+                    <div class="transparency-row">
+                        <label>Text Color</label>
+                        <input type="color" value="${currentColor}" data-action="color">
+                    </div>
+                `;
             }
             html += `
+                <button type="button" data-action="image">Upload Image</button>
                 <div class="transparency-row">
                     <label>Transparency</label>
                     <input type="range" min="0" max="1" step="0.01" value="${sliderValue}" data-action="opacity">
+                </div>
+                <div class="layer-row">
+                    <button type="button" data-action="forward">Forward</button>
+                    <button type="button" data-action="backward">Backward</button>
                 </div>
                 <button type="button" data-action="delete" class="danger">Delete</button>
                 <button type="button" data-action="done" class="done-btn">Done</button>
@@ -1228,7 +1302,7 @@
 
             // Keep menu on screen
             const menuWidth = 230;
-            const menuHeight = 260;
+            const menuHeight = 420;
             elementMenu.style.left = Math.min(x, window.innerWidth - menuWidth) + 'px';
             elementMenu.style.top = Math.min(y, window.innerHeight - menuHeight) + 'px';
             elementMenu.classList.add('active');
@@ -1247,36 +1321,55 @@
                 menuTarget.remove();
                 closeElementMenu();
             } else if (action === 'image') {
+                // Save the target separately: the native file picker's click bubbles to
+                // document and would otherwise trigger the "click outside closes menu"
+                // handler below, wiping menuTarget before a file is even chosen.
+                uploadTarget = menuTarget;
                 elementImageInput.click();
+            } else if (action === 'forward') {
+                const z = parseInt(menuTarget.style.zIndex || '10', 10);
+                menuTarget.style.zIndex = (z + 1).toString();
+            } else if (action === 'backward') {
+                const z = parseInt(menuTarget.style.zIndex || '10', 10);
+                menuTarget.style.zIndex = Math.max(1, z - 1).toString();
             } else if (action === 'done') {
                 closeElementMenu();
             }
         });
 
         elementMenu.addEventListener('input', function(e) {
-            if (e.target.dataset.action === 'opacity' && menuTarget) {
-                const v = parseFloat(e.target.value);
+            if (!menuTarget) return;
+            const action = e.target.dataset.action;
+            if (action === 'opacity') {
                 // 1 on the slider = fully disappeared, 0 = fully visible
+                const v = parseFloat(e.target.value);
                 menuTarget.style.opacity = (1 - v).toString();
+            } else if (action === 'fontsize') {
+                menuTarget.style.fontSize = e.target.value + 'px';
+            } else if (action === 'color') {
+                menuTarget.style.color = e.target.value;
             }
         });
 
         elementImageInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
-            if (file && menuTarget) {
+            const target = uploadTarget;
+            if (file && target) {
                 const reader = new FileReader();
                 reader.onload = function(event) {
-                    menuTarget.style.backgroundImage = `url(${event.target.result})`;
-                    menuTarget.style.backgroundSize = 'cover';
-                    menuTarget.style.backgroundPosition = 'center';
+                    target.style.backgroundImage = `url(${event.target.result})`;
+                    target.style.backgroundSize = 'cover';
+                    target.style.backgroundPosition = 'center';
                 };
                 reader.readAsDataURL(file);
             }
             elementImageInput.value = '';
+            uploadTarget = null;
         });
 
         // Click anywhere outside the menu closes it
         document.addEventListener('click', function(e) {
+            if (e.target === elementImageInput) return; // the hidden file input's own click, ignore
             if (elementMenu.classList.contains('active') &&
                 !elementMenu.contains(e.target) &&
                 e.target !== menuTarget) {
