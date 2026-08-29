@@ -3,89 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My First Website</title>
+    <title>ProxyPathz</title>
     <style>
-        /* Optional: Basic CSS Styling to make it look clean */
+        /* Reset margins and set the dark, purple-themed background */
         body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 40px auto;
-            max-width: 800px;
-            padding: 0 20px;
-            background-color: #f9f9f9;
-            color: #333;
-        }
-        header {
-            background-color: #0073e6;
-            color: white;
-            padding: 20px;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0d0614; /* Deep dark purple/black background */
+            color: #ffffff;
             text-align: center;
-            border-radius: 5px;
         }
-        nav a {
-            margin: 0 10px;
-            color: white;
-            text-decoration: none;
+
+        /* The main container with your purple digital grid style background */
+        .hero-section {
+            background: linear-gradient(rgba(13, 6, 20, 0.4), rgba(13, 6, 20, 0.9)), 
+                        url('https://transparenttextures.com'), 
+                        #2b0d47; /* Grid pattern texture combined with purple */
+            background-size: auto;
+            padding: 80px 20px;
+            border-bottom: 3px solid #4a157d;
+        }
+
+        /* Styling for the text elements exactly like your reference image */
+        .countdown {
+            color: #a855f7;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+
+        .main-title {
+            font-size: 5rem;
+            font-weight: 300;
+            margin: 0 0 30px 0;
+            letter-spacing: 2px;
+        }
+
+        .announcement {
+            font-size: 1.8rem;
+            font-weight: 300;
+            color: #e2e8f0;
+            max-width: 800px;
+            margin: 0 auto 40px auto;
+            line-height: 1.4;
+        }
+
+        .sub-time {
+            font-size: 1.5rem;
+            color: #a855f7;
             font-weight: bold;
         }
-        .content {
-            background: white;
-            padding: 20px;
-            margin-top: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        button {
-            background-color: #0073e6;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            cursor: pointer;
-            border-radius: 3px;
+
+        /* Lower section for the main header */
+        .footer-heading {
+            margin-top: 60px;
+            font-size: 3rem;
+            font-weight: 400;
+            letter-spacing: 1px;
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>Welcome to My Website</h1>
-        <nav>
-            <a href="#about">About</a> | 
-            <a href="#services">Services</a>
-        </nav>
-    </header>
+    <div class="hero-section">
+        <div class="countdown">24Hr left</div>
+        <h1 class="main-title">hi</h1>
+        <p class="announcement">tomorrow there will be an improved app and version</p>
+        <div class="sub-time">24Hr</div>
+    </div>
 
-    <main class="content">
-        <section id="about">
-            <h2>About Us</h2>
-            <p>This is a basic website structured in HTML, styled with internal CSS, and made interactive with JavaScript.</p>
-        </section>
-
-        <section id="services">
-            <h2>Our Features</h2>
-            <ul>
-                <li>Responsive layout for mobile phones</li>
-                <li>Clean semantic structure</li>
-                <li>Interactive event components</li>
-            </ul>
-        </section>
-
-        <section>
-            <h2>Interactive Section</h2>
-            <button id="alertBtn">Click Me!</button>
-        </section>
-    </main>
-
-    <footer>
-        <p style="text-align: center; margin-top: 40px; font-size: 0.8em;">&copy; 2026 My Website Project</p>
-    </footer>
-
-    <script>
-        // Optional: Simple JavaScript for Interactivity
-        document.getElementById('alertBtn').addEventListener('click', function() {
-            alert('Hello! You clicked the button.');
-        });
-    </script>
+    <h2 class="footer-heading">Proxy website</h2>
 
 </body>
 </html>
