@@ -1100,11 +1100,26 @@
             el.addEventListener('mousedown', selectElement);
         }
 
+        // Reverses convertTextToPositioned - back to plain flowing text (Form 1 look)
+        function revertToForm1(el) {
+            el.querySelectorAll('.resize-handle').forEach(h => h.remove());
+            el.classList.remove('editable-element', 'selected');
+            el.style.position = '';
+            el.style.left = '';
+            el.style.top = '';
+            el.style.width = '';
+            el.style.height = '';
+            el.style.margin = '';
+            el.style.cursor = '';
+            el.style.zIndex = '';
+            delete el.dataset.shapeType;
+            el.removeEventListener('mousedown', selectElement);
+        }
+
         document.querySelectorAll('.editable-text').forEach(el => {
             el.addEventListener('dblclick', function(e) {
                 if (!editMode) return;
                 e.stopPropagation();
-                convertTextToPositioned(el);
                 openElementMenu(el, e.clientX, e.clientY);
             });
             el.addEventListener('blur', function() {
@@ -1264,14 +1279,19 @@
 
         function openElementMenu(target, x, y) {
             menuTarget = target;
-            const type = target.dataset.shapeType || 'shape';
-            const hasText = (type === 'text' || type === 'button' || type === 'pageText');
+            const isPageText = target.classList.contains('editable-text');
+            const isConverted = target.classList.contains('editable-element');
+            const type = isPageText ? 'text' : (target.dataset.shapeType || 'shape');
+            const hasText = isPageText || type === 'text' || type === 'button';
             const currentOpacity = target.style.opacity !== '' ? parseFloat(target.style.opacity) : 1;
             const sliderValue = (1 - currentOpacity).toFixed(2);
             const currentFontSize = parseInt(getComputedStyle(target).fontSize, 10) || 16;
             const currentColor = rgbToHex(getComputedStyle(target).color);
 
             let html = `<div class="element-menu-title">${type}</div>`;
+            if (isPageText) {
+                html += `<button type="button" data-action="toggleform">${isConverted ? 'Switch to Form 1 (plain text)' : 'Switch to Form 2 (move/resize)'}</button>`;
+            }
             if (hasText) {
                 html += `<button type="button" data-action="edit">Edit Text</button>`;
                 html += `
@@ -1302,7 +1322,7 @@
 
             // Keep menu on screen
             const menuWidth = 230;
-            const menuHeight = 420;
+            const menuHeight = 460;
             elementMenu.style.left = Math.min(x, window.innerWidth - menuWidth) + 'px';
             elementMenu.style.top = Math.min(y, window.innerHeight - menuHeight) + 'px';
             elementMenu.classList.add('active');
@@ -1332,6 +1352,14 @@
             } else if (action === 'backward') {
                 const z = parseInt(menuTarget.style.zIndex || '10', 10);
                 menuTarget.style.zIndex = Math.max(1, z - 1).toString();
+            } else if (action === 'toggleform') {
+                const rect = elementMenu.getBoundingClientRect();
+                if (menuTarget.classList.contains('editable-element')) {
+                    revertToForm1(menuTarget);
+                } else {
+                    convertTextToPositioned(menuTarget);
+                }
+                openElementMenu(menuTarget, rect.left, rect.top);
             } else if (action === 'done') {
                 closeElementMenu();
             }
