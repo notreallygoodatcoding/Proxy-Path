@@ -422,6 +422,11 @@
             border: 1px solid #0a0a0a;
             border-radius: 50%;
             cursor: nwse-resize;
+            display: none;
+        }
+
+        .editable-element.selected .resize-handle {
+            display: block;
         }
 
         .resize-handle.tl { top: -4px; left: -4px; cursor: nw-resize; }
@@ -517,6 +522,64 @@
             border-radius: 6px;
             cursor: pointer;
             background: none;
+        }
+
+        .element-menu input[type="number"],
+        .element-menu input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            background-color: rgba(168, 85, 247, 0.05);
+            color: #a855f7;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        /* Tab Overlay - opened by a Button shape set to "New Tab" mode */
+        .tab-overlay {
+            display: none;
+            position: fixed;
+            top: 40px;
+            left: 40px;
+            right: 40px;
+            bottom: 40px;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0033 100%);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            border-radius: 12px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+            z-index: 940;
+            overflow: auto;
+        }
+
+        .tab-overlay.active {
+            display: block;
+        }
+
+        .tab-canvas {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 400px;
+        }
+
+        .tab-close-btn {
+            position: fixed;
+            top: 52px;
+            right: 52px;
+            width: 32px;
+            height: 32px;
+            background: rgba(168, 85, 247, 0.15);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            color: #a855f7;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            line-height: 1;
+            cursor: pointer;
+            z-index: 941;
+        }
+
+        .tab-close-btn:hover {
+            background: rgba(168, 85, 247, 0.3);
         }
 
         .element-menu .layer-row {
@@ -861,6 +924,14 @@
     <!-- Element context menu: opens on double-click of any shape or text -->
     <div class="element-menu" id="elementMenu"></div>
 
+    <!-- Tab Overlay: opened by a Button shape set to "New Tab" mode. Add Element
+         while this is open adds into here instead of the main page; the X returns
+         you to editing the main page. -->
+    <div class="tab-overlay" id="tabOverlay">
+        <button class="tab-close-btn" id="tabCloseBtn">×</button>
+        <div class="tab-canvas" id="tabCanvas"></div>
+    </div>
+
     <!-- Code Modal -->
     <div class="code-modal" id="codeModal">
         <div class="code-container">
@@ -939,6 +1010,31 @@
         const shapeColor = document.getElementById('shapeColor');
         const elementMenu = document.getElementById('elementMenu');
         const elementImageInput = document.getElementById('elementImageInput');
+        const tabOverlay = document.getElementById('tabOverlay');
+        const tabCanvas = document.getElementById('tabCanvas');
+        const tabCloseBtn = document.getElementById('tabCloseBtn');
+
+        let activeCanvas = null; // set to heroSection once edit mode starts; Add Element targets whichever canvas is active
+
+        tabCloseBtn.addEventListener('click', function() {
+            tabOverlay.classList.remove('active');
+            activeCanvas = heroSection;
+        });
+
+        // Clicking a Button shape set to "New Tab" mode opens the tab overlay as its
+        // own canvas - this works even while editing, since that's how you add
+        // content into it. A Button with a link only navigates on the live page
+        // (outside edit mode), so it doesn't yank you away while you're editing.
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-shape-type="button"]');
+            if (!btn) return;
+            if (btn.dataset.tabMode === 'true') {
+                tabOverlay.classList.add('active');
+                activeCanvas = tabCanvas;
+            } else if (btn.dataset.link && !editMode) {
+                window.open(btn.dataset.link, '_blank');
+            }
+        });
 
         let triggerBuffer = "";
         let resetTimer = null;
@@ -1059,30 +1155,60 @@
         // ---------- Edit mode ----------
         editModeBtn.addEventListener('click', function() {
             editMode = true;
+            activeCanvas = heroSection;
             heroSection.style.position = 'relative';
             heroSection.classList.add('edit-mode');
             editModeBtn.style.display = 'none';
             finishBtn.style.display = 'block';
 
-            // Convert every page text element to a movable/resizable box right away,
-            // in one go, so nothing shifts size later while you're clicking around.
-            document.querySelectorAll('.editable-text').forEach(convertTextToPositioned);
+            // .hero-content has no fixed size of its own - it was only ever sized by
+            // its normal-flow children. The moment we make those children absolute,
+            // hero-content collapses to 0x0 and re-centers (its parent uses
+            // align-items/justify-content: center), which then shifts every child's
+            // left/top out from under it. Taking hero-content out of the positioning
+            // chain fixes that - heroSection (which never collapses) becomes the one
+            // stable anchor for everything, same as your shapes already use.
+            const heroContent = heroSection.querySelector('.hero-content');
+            if (heroContent) heroContent.style.position = 'static';
+
+            // Measure every text element's position BEFORE converting any of them.
+            // Converting one removes it from the normal flow and shifts the layout,
+            // which would throw off the measurement of every element after it if
+            // done one at a time - that's what caused everything to pile up.
+            const heroRect = heroSection.getBoundingClientRect();
+            const texts = Array.from(document.querySelectorAll('.editable-text'));
+            const measurements = texts.map(el => {
+                if (el.classList.contains('editable-element')) return null;
+                const elRect = el.getBoundingClientRect();
+                return {
+                    left: elRect.left - heroRect.left,
+                    top: elRect.top - heroRect.top,
+                    width: elRect.width,
+                    height: elRect.height
+                };
+            });
+            texts.forEach((el, i) => {
+                if (measurements[i]) convertTextToPositioned(el, measurements[i]);
+            });
         });
 
         // Turns a normal-flow text element into a positioned, resizable box - same
-        // handles and drag behavior as a shape. Called once per element, up front,
-        // when Edit Mode is entered (not lazily on double-click, which caused a jump).
-        function convertTextToPositioned(el) {
+        // handles and drag behavior as a shape. Accepts a precomputed measurement so
+        // callers can measure everything up front before converting any of it.
+        function convertTextToPositioned(el, precomputed) {
             if (el.classList.contains('editable-element')) return; // already converted
 
-            const parent = el.offsetParent || heroSection;
-            const parentRect = parent.getBoundingClientRect();
-            const elRect = el.getBoundingClientRect();
-
-            const left = elRect.left - parentRect.left;
-            const top = elRect.top - parentRect.top;
-            const width = elRect.width;
-            const height = elRect.height;
+            let left, top, width, height;
+            if (precomputed) {
+                ({ left, top, width, height } = precomputed);
+            } else {
+                const heroRect = heroSection.getBoundingClientRect();
+                const elRect = el.getBoundingClientRect();
+                left = elRect.left - heroRect.left;
+                top = elRect.top - heroRect.top;
+                width = elRect.width;
+                height = elRect.height;
+            }
 
             el.classList.add('editable-element');
             el.dataset.shapeType = 'pageText';
@@ -1122,6 +1248,14 @@
                 const shape = this.dataset.shape;
                 createShape(shape);
             });
+        });
+
+        // Clicking empty space (not on a shape/text) deselects everything,
+        // so resize handles only show for the element you're actually working on.
+        heroSection.addEventListener('mousedown', function(e) {
+            if (e.target === heroSection || e.target.classList.contains('hero-content')) {
+                document.querySelectorAll('.editable-element').forEach(el => el.classList.remove('selected'));
+            }
         });
 
         function createShape(type) {
@@ -1175,7 +1309,7 @@
                 element.contentEditable = false;
             });
 
-            heroSection.appendChild(element);
+            (activeCanvas || heroSection).appendChild(element);
             selectedElement = element;
         }
 
@@ -1292,11 +1426,26 @@
             }
             if (type !== 'circle') {
                 html += `
+                    <div class="transparency-row">
+                        <label>Corner Radius (px)</label>
+                        <input type="number" min="0" max="100" step="1" value="${Math.round(currentRadius)}" data-action="radius">
+                    </div>
+                `;
+            }
+            if (type === 'button') {
+                const currentLink = target.dataset.link || '';
+                const isTabMode = target.dataset.tabMode === 'true';
+                html += `
+                    <div class="transparency-row">
+                        <label>Insert Link</label>
+                        <input type="text" placeholder="https://..." value="${currentLink}" data-action="link">
+                    </div>
+                    <button type="button" data-action="removelink">Remove Link</button>
                     <div class="panel-section" style="gap:8px;">
-                        <label style="font-size:0.7rem;">Rounded Corners</label>
+                        <label style="font-size:0.7rem;">New Tab Button</label>
                         <div class="toggle-switch">
                             <label class="switch">
-                                <input type="checkbox" data-action="rounded" ${currentRadius > 0 ? 'checked' : ''}>
+                                <input type="checkbox" data-action="tabmode" ${isTabMode ? 'checked' : ''}>
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -1309,6 +1458,18 @@
                     <label>Transparency</label>
                     <input type="range" min="0" max="1" step="0.01" value="${sliderValue}" data-action="opacity">
                 </div>
+            `;
+            if (!isPageText) {
+                const currentBgAlpha = getComputedStyle(target).backgroundColor.match(/[\d.]+/g);
+                const bgAlpha = currentBgAlpha && currentBgAlpha[3] !== undefined ? parseFloat(currentBgAlpha[3]) : 1;
+                html += `
+                    <div class="transparency-row">
+                        <label>Background Transparency</label>
+                        <input type="range" min="0" max="1" step="0.01" value="${(1 - bgAlpha).toFixed(2)}" data-action="bgopacity">
+                    </div>
+                `;
+            }
+            html += `
                 <div class="layer-row">
                     <button type="button" data-action="forward">Forward</button>
                     <button type="button" data-action="backward">Backward</button>
@@ -1350,6 +1511,10 @@
             } else if (action === 'backward') {
                 const z = parseInt(menuTarget.style.zIndex || '10', 10);
                 menuTarget.style.zIndex = Math.max(1, z - 1).toString();
+            } else if (action === 'removelink') {
+                delete menuTarget.dataset.link;
+                const linkInput = elementMenu.querySelector('[data-action="link"]');
+                if (linkInput) linkInput.value = '';
             } else if (action === 'done') {
                 closeElementMenu();
             }
@@ -1357,8 +1522,8 @@
 
         elementMenu.addEventListener('change', function(e) {
             if (!menuTarget) return;
-            if (e.target.dataset.action === 'rounded') {
-                menuTarget.style.borderRadius = e.target.checked ? '16px' : '0px';
+            if (e.target.dataset.action === 'tabmode') {
+                menuTarget.dataset.tabMode = e.target.checked ? 'true' : 'false';
             }
         });
 
@@ -1373,6 +1538,21 @@
                 menuTarget.style.fontSize = e.target.value + 'px';
             } else if (action === 'color') {
                 menuTarget.style.color = e.target.value;
+            } else if (action === 'radius') {
+                const px = parseFloat(e.target.value);
+                menuTarget.style.borderRadius = (isNaN(px) ? 0 : px) + 'px';
+            } else if (action === 'link') {
+                menuTarget.dataset.link = e.target.value;
+            } else if (action === 'bgopacity') {
+                // Fades only the fill color's alpha - text and border stay fully visible.
+                // 1 on the slider = background fully disappears, 0 = fully solid.
+                const v = parseFloat(e.target.value);
+                const alpha = 1 - v;
+                const current = getComputedStyle(menuTarget).backgroundColor;
+                const nums = current.match(/[\d.]+/g);
+                if (nums) {
+                    menuTarget.style.backgroundColor = `rgba(${nums[0]}, ${nums[1]}, ${nums[2]}, ${alpha})`;
+                }
             }
         });
 
