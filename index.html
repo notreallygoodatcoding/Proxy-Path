@@ -208,21 +208,6 @@
             display: block;
         }
 
-        /* Keyframe animation for pop-up effect */
-        @keyframes popUpAndFade {
-            0% {
-                opacity: 0;
-                transform: translateY(100vh) scale(0.5);
-            }
-            50% {
-                opacity: 1;
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
         /* The main container with your space style background */
         .hero-section {
             background: linear-gradient(rgba(10, 14, 39, 0.5), rgba(10, 14, 39, 0.95)), 
@@ -231,7 +216,6 @@
             padding: 80px 20px;
             border-bottom: 3px solid #64b5f6;
             box-shadow: 0 0 30px rgba(100, 181, 246, 0.3);
-            animation: popUpAndFade 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -248,7 +232,6 @@
             text-transform: uppercase;
             font-weight: bold;
             text-shadow: 0 0 10px rgba(100, 181, 246, 0.6);
-            animation: popUpAndFade 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
         .main-title {
@@ -258,7 +241,6 @@
             letter-spacing: 2px;
             color: #ffffff;
             text-shadow: 0 0 20px rgba(100, 181, 246, 0.5);
-            animation: popUpAndFade 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
         .announcement {
@@ -268,7 +250,6 @@
             max-width: 800px;
             margin: 0 auto 40px auto;
             line-height: 1.4;
-            animation: popUpAndFade 1.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
         .sub-time {
@@ -276,7 +257,6 @@
             color: #64b5f6;
             font-weight: bold;
             text-shadow: 0 0 10px rgba(100, 181, 246, 0.5);
-            animation: popUpAndFade 2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
         /* Lower section for the main header */
@@ -288,7 +268,6 @@
             color: #64b5f6;
             text-shadow: 0 0 15px rgba(100, 181, 246, 0.4);
             padding: 20px;
-            animation: popUpAndFade 2.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
         .footer-heading::before {
