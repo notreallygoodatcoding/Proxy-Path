@@ -1135,6 +1135,75 @@
             }
         });
 
+        // Selected-element shortcuts (only while actively in Edit Mode, and ignored
+        // while typing anywhere - a text field's own Backspace/arrow keys/copy-paste
+        // must behave normally, not act on the shape underneath):
+        //   Arrow keys  -> nudge the selected element (1px, or one grid step if Grid Snap is on)
+        //   Backspace   -> delete the selected element
+        //   Ctrl/Cmd+C  -> copy the selected element
+        //   Ctrl/Cmd+V  -> paste a copy, offset slightly so it's not stacked exactly on top
+        let clipboardElement = null;
+
+        document.addEventListener('keydown', function(e) {
+            if (!editMode) return;
+
+            const active = document.activeElement;
+            const isTyping = active && (active.isContentEditable || active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
+            if (isTyping) return;
+
+            const selected = document.querySelector('.editable-element.selected');
+
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                if (!selected) return;
+                e.preventDefault();
+                const step = gridSnapToggle.checked ? GRID_SIZE : 1;
+                let left = parseFloat(selected.style.left) || 0;
+                let top = parseFloat(selected.style.top) || 0;
+                if (e.key === 'ArrowUp') top -= step;
+                else if (e.key === 'ArrowDown') top += step;
+                else if (e.key === 'ArrowLeft') left -= step;
+                else if (e.key === 'ArrowRight') left += step;
+                selected.style.left = left + 'px';
+                selected.style.top = top + 'px';
+            } else if (e.key === 'Backspace') {
+                if (!selected) return;
+                e.preventDefault();
+                selected.remove();
+            } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+                if (!selected) return;
+                clipboardElement = selected.cloneNode(true);
+            } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+                if (!clipboardElement) return;
+                e.preventDefault();
+                const copy = clipboardElement.cloneNode(true);
+                copy.classList.add('selected');
+
+                const left = (parseFloat(copy.style.left) || 0) + 20;
+                const top = (parseFloat(copy.style.top) || 0) + 20;
+                copy.style.left = left + 'px';
+                copy.style.top = top + 'px';
+
+                // Give it its own tab canvas instead of sharing the original's
+                if (copy.dataset.tabId) {
+                    copy.dataset.tabId = 'tab-' + (++tabIdCounter);
+                }
+
+                copy.addEventListener('mousedown', selectElement);
+                copy.addEventListener('dblclick', function(ev) {
+                    if (!editMode) return;
+                    ev.stopPropagation();
+                    openElementMenu(copy, ev.clientX, ev.clientY);
+                });
+                copy.addEventListener('blur', function() {
+                    copy.contentEditable = false;
+                });
+
+                document.querySelectorAll('.editable-element').forEach(el => el.classList.remove('selected'));
+                (activeCanvas || heroSection).appendChild(copy);
+                selectedElement = copy;
+            }
+        });
+
         loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const username = usernameInput.value.trim();
