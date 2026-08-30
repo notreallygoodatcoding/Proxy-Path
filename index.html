@@ -924,6 +924,8 @@
             <button class="edit-button" id="editModeBtn">Enter Edit</button>
             <button class="finish-button" id="finishBtn" style="display: none;">Export Code</button>
             <button class="copy-button" id="downloadPageBtn">Download Page</button>
+            <button class="copy-button" id="uploadPageBtn">Upload Page</button>
+            <input type="file" id="uploadPageInput" accept=".html,text/html" style="display:none">
         </div>
     </div>
 
@@ -1006,6 +1008,8 @@
         const editModeBtn = document.getElementById('editModeBtn');
         const finishBtn = document.getElementById('finishBtn');
         const downloadPageBtn = document.getElementById('downloadPageBtn');
+        const uploadPageBtn = document.getElementById('uploadPageBtn');
+        const uploadPageInput = document.getElementById('uploadPageInput');
         const heroSection = document.getElementById('heroSection');
         const stagingMessage = document.getElementById('stagingMessage');
         const codeModal = document.getElementById('codeModal');
@@ -1193,6 +1197,28 @@
                 stagingMessage.classList.add('show');
                 heroSection.classList.add('hidden');
             }
+
+            // Rehydration: any shape or converted text that's already sitting in the
+            // page when it loads (from a previously downloaded/reopened file) has its
+            // markup and styling intact, but never had drag/menu behavior attached -
+            // that only ever happened at the moment it was originally created. Without
+            // this, every existing shape loads frozen (the softlock bug).
+            document.querySelectorAll('.editable-element').forEach(el => {
+                el.addEventListener('mousedown', selectElement);
+                if (!el.classList.contains('editable-text')) {
+                    // .editable-text elements get dblclick/blur wired separately below,
+                    // with the editMode guard - this covers shapes only, to avoid
+                    // double-wiring the same element twice.
+                    el.addEventListener('dblclick', function(e) {
+                        if (!editMode) return;
+                        e.stopPropagation();
+                        openElementMenu(el, e.clientX, e.clientY);
+                    });
+                    el.addEventListener('blur', function() {
+                        el.contentEditable = false;
+                    });
+                }
+            });
         });
 
         // ---------- Edit mode ----------
@@ -1345,6 +1371,7 @@
 
             element.addEventListener('mousedown', selectElement);
             element.addEventListener('dblclick', function(e) {
+                if (!editMode) return;
                 e.stopPropagation();
                 openElementMenu(element, e.clientX, e.clientY);
             });
@@ -1716,6 +1743,27 @@
             setTimeout(() => {
                 downloadPageBtn.textContent = 'Download Page';
             }, 2000);
+        });
+
+        // Upload Page: pick a previously downloaded .html file and load it as the
+        // live page. Since that file is a complete page (styles + script + your
+        // shapes), replacing the document with it re-runs its script from scratch -
+        // including the rehydration pass above - so everything comes back exactly
+        // as it was, fully draggable/editable again.
+        uploadPageBtn.addEventListener('click', function() {
+            uploadPageInput.click();
+        });
+
+        uploadPageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                document.open();
+                document.write(event.target.result);
+                document.close();
+            };
+            reader.readAsText(file);
         });
     </script>
 
