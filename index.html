@@ -172,6 +172,11 @@
             display: flex;
         }
 
+        .dev-ui-hidden .developer-badge,
+        .dev-ui-hidden .developer-panel {
+            display: none !important;
+        }
+
         .badge-label {
             font-size: 0.85rem;
             text-transform: uppercase;
@@ -402,11 +407,14 @@
 
         .editable-element {
             position: absolute;
-            border: 2px dashed rgba(168, 85, 247, 0.5);
-            cursor: move;
             touch-action: none;
             box-sizing: border-box;
             transition: border-color 0.2s;
+        }
+
+        .edit-mode .editable-element {
+            border: 2px dashed rgba(168, 85, 247, 0.5);
+            cursor: move;
         }
 
         .editable-element.selected {
@@ -923,7 +931,6 @@
 
             <button class="edit-button" id="editModeBtn">Enter Edit</button>
             <button class="finish-button" id="finishBtn" style="display: none;">Export Code</button>
-            <button class="copy-button" id="downloadPageBtn">Download Page</button>
             <button class="copy-button" id="uploadPageBtn">Upload Page</button>
             <input type="file" id="uploadPageInput" accept=".html,text/html" style="display:none">
         </div>
@@ -1007,7 +1014,6 @@
         const closePanel = document.getElementById('closePanel');
         const editModeBtn = document.getElementById('editModeBtn');
         const finishBtn = document.getElementById('finishBtn');
-        const downloadPageBtn = document.getElementById('downloadPageBtn');
         const uploadPageBtn = document.getElementById('uploadPageBtn');
         const uploadPageInput = document.getElementById('uploadPageInput');
         const heroSection = document.getElementById('heroSection');
@@ -1118,6 +1124,27 @@
             passwordInput.value = '';
         }
 
+        // Developer shortcuts - only active once logged in, and ignored while you're
+        // actually typing somewhere (text edit, link field, corner radius, etc.).
+        //   5       -> download the page as a file
+        //   6       -> hide/show the Build badge and panel (toggle)
+        //   Escape  -> stop editing without opening the export code modal
+        document.addEventListener('keydown', function(e) {
+            if (!developerBadge.classList.contains('active')) return;
+
+            const active = document.activeElement;
+            const isTyping = active && (active.isContentEditable || active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
+            if (isTyping) return;
+
+            if (e.key === '5') {
+                downloadPageSnapshot();
+            } else if (e.key === '6') {
+                document.body.classList.toggle('dev-ui-hidden');
+            } else if (e.key === 'Escape') {
+                if (editMode) exitEditMode();
+            }
+        });
+
         loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const username = usernameInput.value.trim();
@@ -1227,6 +1254,7 @@
             activeCanvas = heroSection;
             heroSection.style.position = 'relative';
             heroSection.classList.add('edit-mode');
+            document.body.classList.add('edit-mode'); // covers shapes inside a tab overlay too
             editModeBtn.style.display = 'none';
             finishBtn.style.display = 'block';
 
@@ -1653,9 +1681,13 @@
         });
 
         // ---------- Finish / export ----------
-        finishBtn.addEventListener('click', function() {
+        // Cleans up all edit-mode-only state (dashed borders, handles, contentEditable,
+        // menu). Used by both "Export Code" (which also opens the code modal after) and
+        // the Escape key (a quick way to stop editing without exporting anything).
+        function exitEditMode() {
             editMode = false;
             heroSection.classList.remove('edit-mode');
+            document.body.classList.remove('edit-mode');
             closeElementMenu();
 
             document.querySelectorAll('.editable-text').forEach(el => {
@@ -1669,7 +1701,10 @@
 
             editModeBtn.style.display = 'block';
             finishBtn.style.display = 'none';
+        }
 
+        finishBtn.addEventListener('click', function() {
+            exitEditMode();
             const htmlCode = heroSection.innerHTML;
             codeDisplay.textContent = htmlCode;
             codeModal.classList.add('active');
@@ -1694,13 +1729,44 @@
         // works immediately when reopened - no re-wiring needed, since the drag/menu/
         // click logic is already baked into the file. Works on a clone of the page,
         // so it never disturbs what you're currently editing.
-        downloadPageBtn.addEventListener('click', function() {
+        function showToast(text) {
+            const toast = document.createElement('div');
+            toast.textContent = text;
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 30px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+                color: #0a0a0a;
+                padding: 10px 22px;
+                border-radius: 50px;
+                font-weight: 700;
+                font-size: 0.85rem;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                z-index: 1100;
+                box-shadow: 0 8px 32px rgba(168, 85, 247, 0.4);
+                pointer-events: none;
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 1500);
+        }
+
+        // Download the ENTIRE current page (not just the edited section) as a real
+        // .html file. Unlike Export Code, this keeps the whole <script> so the file
+        // works immediately when reopened - no re-wiring needed. Works on a clone of
+        // the page, so it never disturbs what you're currently editing. Triggered by
+        // pressing "5" (see keyboard shortcuts below).
+        function downloadPageSnapshot() {
             const clone = document.documentElement.cloneNode(true);
 
             // Strip anything that's only true mid-edit, so the downloaded file opens
             // looking like a normal page rather than frozen mid-interaction.
             const cloneHero = clone.querySelector('#heroSection');
             if (cloneHero) cloneHero.classList.remove('edit-mode');
+            const cloneBody = clone.querySelector('body');
+            if (cloneBody) cloneBody.classList.remove('edit-mode');
 
             clone.querySelectorAll('.editable-element, .editable-text').forEach(el => {
                 el.classList.remove('selected');
@@ -1739,11 +1805,8 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            downloadPageBtn.textContent = 'Downloaded!';
-            setTimeout(() => {
-                downloadPageBtn.textContent = 'Download Page';
-            }, 2000);
-        });
+            showToast('Downloaded!');
+        }
 
         // Upload Page: pick a previously downloaded .html file and load it as the
         // live page. Since that file is a complete page (styles + script + your
