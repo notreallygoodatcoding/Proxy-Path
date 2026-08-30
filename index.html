@@ -376,6 +376,25 @@
             transform: translateY(0);
         }
 
+        .logout-button {
+            padding: 12px;
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.4);
+            color: #ff6b6b;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        .logout-button:hover {
+            background: rgba(255, 107, 107, 0.2);
+            border-color: #ff6b6b;
+        }
+
         /* Edit Mode */
         .edit-mode {
             position: relative;
@@ -903,6 +922,7 @@
             <button class="finish-button" id="finishBtn" style="display: none;">Export Code</button>
             <button class="copy-button" id="uploadPageBtn">Upload Page</button>
             <input type="file" id="uploadPageInput" accept=".html,text/html" style="display:none">
+            <button class="logout-button" id="logoutBtn">Log Out</button>
         </div>
     </div>
 
@@ -982,6 +1002,7 @@
         const badgeToggle = document.getElementById('badgeToggle');
         const developerPanel = document.getElementById('developerPanel');
         const closePanel = document.getElementById('closePanel');
+        const logoutBtn = document.getElementById('logoutBtn');
         const editModeBtn = document.getElementById('editModeBtn');
         const finishBtn = document.getElementById('finishBtn');
         const uploadPageBtn = document.getElementById('uploadPageBtn');
@@ -1145,7 +1166,27 @@
             badgeToggle.textContent = '>';
         });
 
+        // Log Out: ends the developer session entirely (badge, panel, timer, edit
+        // mode if active) so you can see exactly what a guest visitor sees - the
+        // page itself stays visible, only the developer chrome goes away.
+        logoutBtn.addEventListener('click', function() {
+            if (editMode) exitEditMode();
+
+            localStorage.removeItem('developerSessionStart');
+            if (activeTimerInterval) {
+                clearInterval(activeTimerInterval);
+                activeTimerInterval = null;
+            }
+            developerBadge.classList.remove('active');
+            developerPanel.classList.remove('open');
+            badgeToggle.textContent = '>';
+            document.body.classList.remove('dev-ui-hidden');
+        });
+
+        let activeTimerInterval = null;
+
         function startCountdownTimer() {
+            if (activeTimerInterval) clearInterval(activeTimerInterval);
             const updateTimer = function() {
                 const sessionStartTime = parseInt(localStorage.getItem('developerSessionStart'));
                 const elapsedTime = Date.now() - sessionStartTime;
@@ -1155,7 +1196,8 @@
                     developerBadge.classList.remove('active');
                     localStorage.removeItem('developerSessionStart');
                     timerDisplay.textContent = '00:00:00';
-                    clearInterval(timerInterval);
+                    clearInterval(activeTimerInterval);
+                    activeTimerInterval = null;
                 } else {
                     const hours = Math.floor(remainingTime / (1000 * 60 * 60));
                     const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
@@ -1167,7 +1209,7 @@
                 }
             };
             updateTimer();
-            const timerInterval = setInterval(updateTimer, 1000);
+            activeTimerInterval = setInterval(updateTimer, 1000);
         }
 
         window.addEventListener('load', function() {
