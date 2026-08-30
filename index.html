@@ -556,10 +556,15 @@
         }
 
         .tab-canvas {
+            display: none;
             position: relative;
             width: 100%;
             height: 100%;
             min-height: 400px;
+        }
+
+        .tab-canvas.active {
+            display: block;
         }
 
         .tab-close-btn {
@@ -929,7 +934,6 @@
          you to editing the main page. -->
     <div class="tab-overlay" id="tabOverlay">
         <button class="tab-close-btn" id="tabCloseBtn">×</button>
-        <div class="tab-canvas" id="tabCanvas"></div>
     </div>
 
     <!-- Code Modal -->
@@ -1011,29 +1015,66 @@
         const elementMenu = document.getElementById('elementMenu');
         const elementImageInput = document.getElementById('elementImageInput');
         const tabOverlay = document.getElementById('tabOverlay');
-        const tabCanvas = document.getElementById('tabCanvas');
         const tabCloseBtn = document.getElementById('tabCloseBtn');
 
         let activeCanvas = null; // set to heroSection once edit mode starts; Add Element targets whichever canvas is active
+        let tabIdCounter = 0;
+
+        // Every "New Tab" button gets its own canvas div (identified by tabId), so
+        // two different buttons never show each other's content.
+        function getOrCreateTabCanvas(tabId) {
+            let canvas = tabOverlay.querySelector(`.tab-canvas[data-tab-id="${tabId}"]`);
+            if (!canvas) {
+                canvas = document.createElement('div');
+                canvas.className = 'tab-canvas';
+                canvas.dataset.tabId = tabId;
+                tabOverlay.appendChild(canvas);
+            }
+            return canvas;
+        }
 
         tabCloseBtn.addEventListener('click', function() {
             tabOverlay.classList.remove('active');
             activeCanvas = heroSection;
         });
 
-        // Clicking a Button shape set to "New Tab" mode opens the tab overlay as its
-        // own canvas - this works even while editing, since that's how you add
+        // Clicking a Button shape set to "New Tab" mode opens ITS OWN canvas (not
+        // a shared one) - this works even while editing, since that's how you add
         // content into it. A Button with a link only navigates on the live page
         // (outside edit mode), so it doesn't yank you away while you're editing.
+        //
+        // The action is delayed slightly and cancelled if a second click follows
+        // right after: without this, the overlay would pop open and physically
+        // cover the button after the FIRST click of a double-click, so the second
+        // click would land on the overlay instead of the button and the edit menu
+        // (which needs dblclick) could never be reached.
+        let buttonClickTimer = null;
         document.addEventListener('click', function(e) {
             const btn = e.target.closest('[data-shape-type="button"]');
             if (!btn) return;
-            if (btn.dataset.tabMode === 'true') {
-                tabOverlay.classList.add('active');
-                activeCanvas = tabCanvas;
-            } else if (btn.dataset.link && !editMode) {
-                window.open(btn.dataset.link, '_blank');
+
+            if (buttonClickTimer) {
+                // second click of a double-click - let dblclick's menu handle it instead
+                clearTimeout(buttonClickTimer);
+                buttonClickTimer = null;
+                return;
             }
+
+            buttonClickTimer = setTimeout(function() {
+                buttonClickTimer = null;
+                if (btn.dataset.tabMode === 'true') {
+                    if (!btn.dataset.tabId) {
+                        btn.dataset.tabId = 'tab-' + (++tabIdCounter);
+                    }
+                    const canvas = getOrCreateTabCanvas(btn.dataset.tabId);
+                    tabOverlay.querySelectorAll('.tab-canvas').forEach(c => c.classList.remove('active'));
+                    canvas.classList.add('active');
+                    tabOverlay.classList.add('active');
+                    activeCanvas = canvas;
+                } else if (btn.dataset.link && !editMode) {
+                    window.open(btn.dataset.link, '_blank');
+                }
+            }, 280);
         });
 
         let triggerBuffer = "";
