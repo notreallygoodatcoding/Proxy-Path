@@ -45,26 +45,6 @@
             z-index: 1;
         }
 
-        /* Staging Message */
-        .staging-message {
-            text-align: center;
-            color: rgba(168, 85, 247, 0.6);
-            font-size: 0.95rem;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            display: none;
-        }
-
-        .staging-message.show {
-            display: block;
-        }
-
-        .staging-message h3 {
-            font-size: 1.2rem;
-            margin-bottom: 10px;
-            color: #a855f7;
-        }
-
         /* Hero Section */
         .hero-section {
             min-height: 100vh;
@@ -78,10 +58,6 @@
             border-bottom: 1px solid rgba(168, 85, 247, 0.2);
             position: relative;
             width: 100%;
-        }
-
-        .hero-section.hidden {
-            display: none;
         }
 
         .hero-content {
@@ -882,12 +858,6 @@
 </head>
 <body>
 
-    <!-- Staging Message (shown when not logged in) -->
-    <div class="staging-message" id="stagingMessage">
-        <h3>Stage 1 - Developer Only</h3>
-        <p>ProxyPathz is in early testing. Access for developers only.</p>
-    </div>
-
     <!-- Developer Badge -->
     <div class="developer-badge" id="developerBadge">
         <span class="badge-label">Build</span>
@@ -982,7 +952,7 @@
     </div>
 
     <!-- Hero Section (only shows when logged in as developer) -->
-    <div class="hero-section hidden" id="heroSection">
+    <div class="hero-section" id="heroSection">
         <div class="hero-content">
             <div class="countdown editable-text" contenteditable="false">24 Hours</div>
             <h1 class="main-title editable-text" contenteditable="false">ProxyPathz</h1>
@@ -1017,7 +987,6 @@
         const uploadPageBtn = document.getElementById('uploadPageBtn');
         const uploadPageInput = document.getElementById('uploadPageInput');
         const heroSection = document.getElementById('heroSection');
-        const stagingMessage = document.getElementById('stagingMessage');
         const codeModal = document.getElementById('codeModal');
         const codeDisplay = document.getElementById('codeDisplay');
         const closeCode = document.getElementById('closeCode');
@@ -1154,8 +1123,6 @@
                 errorMessage.classList.remove('show');
                 loginOverlay.classList.remove('active');
                 developerBadge.classList.add('active');
-                stagingMessage.classList.remove('show');
-                heroSection.classList.remove('hidden');
 
                 const sessionStartTime = Date.now();
                 localStorage.setItem('developerSessionStart', sessionStartTime);
@@ -1188,8 +1155,6 @@
                     developerBadge.classList.remove('active');
                     localStorage.removeItem('developerSessionStart');
                     timerDisplay.textContent = '00:00:00';
-                    heroSection.classList.add('hidden');
-                    stagingMessage.classList.add('show');
                     clearInterval(timerInterval);
                 } else {
                     const hours = Math.floor(remainingTime / (1000 * 60 * 60));
@@ -1212,17 +1177,10 @@
                 const elapsedTime = Date.now() - sessionStart;
                 if (elapsedTime < SESSION_DURATION) {
                     developerBadge.classList.add('active');
-                    stagingMessage.classList.remove('show');
-                    heroSection.classList.remove('hidden');
                     startCountdownTimer();
                 } else {
                     localStorage.removeItem('developerSessionStart');
-                    stagingMessage.classList.add('show');
-                    heroSection.classList.add('hidden');
                 }
-            } else {
-                stagingMessage.classList.add('show');
-                heroSection.classList.add('hidden');
             }
 
             // Rehydration: any shape or converted text that's already sitting in the
