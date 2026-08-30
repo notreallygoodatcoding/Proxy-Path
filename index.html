@@ -923,6 +923,7 @@
 
             <button class="edit-button" id="editModeBtn">Enter Edit</button>
             <button class="finish-button" id="finishBtn" style="display: none;">Export Code</button>
+            <button class="copy-button" id="downloadPageBtn">Download Page</button>
         </div>
     </div>
 
@@ -1004,6 +1005,7 @@
         const closePanel = document.getElementById('closePanel');
         const editModeBtn = document.getElementById('editModeBtn');
         const finishBtn = document.getElementById('finishBtn');
+        const downloadPageBtn = document.getElementById('downloadPageBtn');
         const heroSection = document.getElementById('heroSection');
         const stagingMessage = document.getElementById('stagingMessage');
         const codeModal = document.getElementById('codeModal');
@@ -1658,6 +1660,62 @@
                     copyCodeBtn.textContent = 'Copy Code';
                 }, 2000);
             });
+        });
+
+        // Download the ENTIRE current page (not just the edited section) as a real
+        // .html file. Unlike Export Code, this keeps the whole <script> so the file
+        // works immediately when reopened - no re-wiring needed, since the drag/menu/
+        // click logic is already baked into the file. Works on a clone of the page,
+        // so it never disturbs what you're currently editing.
+        downloadPageBtn.addEventListener('click', function() {
+            const clone = document.documentElement.cloneNode(true);
+
+            // Strip anything that's only true mid-edit, so the downloaded file opens
+            // looking like a normal page rather than frozen mid-interaction.
+            const cloneHero = clone.querySelector('#heroSection');
+            if (cloneHero) cloneHero.classList.remove('edit-mode');
+
+            clone.querySelectorAll('.editable-element, .editable-text').forEach(el => {
+                el.classList.remove('selected');
+                el.removeAttribute('contenteditable');
+            });
+
+            const cloneMenu = clone.querySelector('#elementMenu');
+            if (cloneMenu) {
+                cloneMenu.classList.remove('active');
+                cloneMenu.innerHTML = '';
+            }
+
+            const cloneTabOverlay = clone.querySelector('#tabOverlay');
+            if (cloneTabOverlay) cloneTabOverlay.classList.remove('active');
+            clone.querySelectorAll('.tab-canvas').forEach(c => c.classList.remove('active'));
+
+            const cloneCodeModal = clone.querySelector('#codeModal');
+            if (cloneCodeModal) cloneCodeModal.classList.remove('active');
+
+            const cloneLoginOverlay = clone.querySelector('#loginOverlay');
+            if (cloneLoginOverlay) cloneLoginOverlay.classList.remove('active');
+
+            const cloneEditBtn = clone.querySelector('#editModeBtn');
+            if (cloneEditBtn) cloneEditBtn.style.display = '';
+            const cloneFinishBtn = clone.querySelector('#finishBtn');
+            if (cloneFinishBtn) cloneFinishBtn.style.display = 'none';
+
+            const html = '<!DOCTYPE html>\n' + clone.outerHTML;
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'index.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            downloadPageBtn.textContent = 'Downloaded!';
+            setTimeout(() => {
+                downloadPageBtn.textContent = 'Download Page';
+            }, 2000);
         });
     </script>
 
