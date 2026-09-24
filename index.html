@@ -1134,8 +1134,15 @@
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
         const errorMessage = document.getElementById('errorMessage');
-        document.body.classList.add('dev-ui-hidden');
         const developerBadge = document.getElementById('developerBadge');
+
+        function setDeveloperUiHidden(hidden) {
+            document.body.classList.toggle('dev-ui-hidden', hidden);
+            if (hidden) {
+                developerPanel.classList.remove('open');
+                badgeToggle.textContent = '>';
+            }
+        }
         const timerDisplay = document.getElementById('timerDisplay');
         const badgeToggle = document.getElementById('badgeToggle');
         const developerPanel = document.getElementById('developerPanel');
@@ -1356,7 +1363,7 @@
             if (!developerBadge.classList.contains('active')) return;
 
             if (e.key === '6') {
-                document.body.classList.toggle('dev-ui-hidden');
+                setDeveloperUiHidden(!document.body.classList.contains('dev-ui-hidden'));
             } else if (e.key === 'Escape') {
                 if (editMode) exitEditMode();
             }
@@ -1405,12 +1412,11 @@
                 else if (key === 'ArrowRight') dx = step;
 
                 selectedGroup.forEach(el => {
-                    // offsetLeft/offsetTop give the actual current pixel position
-                    // regardless of whether the underlying CSS is % or px.
                     const container = el.offsetParent || heroSection;
                     const containerRect = container.getBoundingClientRect();
-                    const leftPx = el.offsetLeft + dx;
-                    const topPx = el.offsetTop + dy;
+                    const currentRect = el.getBoundingClientRect();
+                    const leftPx = currentRect.left - containerRect.left + dx;
+                    const topPx = currentRect.top - containerRect.top + dy;
                     el.style.left = (leftPx / containerRect.width * 100) + '%';
                     el.style.top = (topPx / containerRect.height * 100) + '%';
                 });
@@ -1486,6 +1492,7 @@
             if (username === DEVELOPER_USERNAME && password === DEVELOPER_PASSWORD) {
                 errorMessage.classList.remove('show');
                 loginOverlay.classList.remove('active');
+                setDeveloperUiHidden(false);
                 developerBadge.classList.add('active');
 
                 const sessionStartTime = Date.now();
@@ -1500,6 +1507,10 @@
         });
 
         badgeToggle.addEventListener('click', function() {
+            const hidden = document.body.classList.contains('dev-ui-hidden');
+            if (hidden) {
+                setDeveloperUiHidden(false);
+            }
             developerPanel.classList.toggle('open');
             badgeToggle.textContent = developerPanel.classList.contains('open') ? '<' : '>';
         });
@@ -1523,7 +1534,7 @@
             developerBadge.classList.remove('active');
             developerPanel.classList.remove('open');
             badgeToggle.textContent = '>';
-            document.body.classList.remove('dev-ui-hidden');
+            setDeveloperUiHidden(true);
         });
 
         let activeTimerInterval = null;
@@ -1561,6 +1572,7 @@
                 const sessionStart = parseInt(sessionStartTime);
                 const elapsedTime = Date.now() - sessionStart;
                 if (elapsedTime < SESSION_DURATION) {
+                    setDeveloperUiHidden(false);
                     developerBadge.classList.add('active');
                     startCountdownTimer();
                 } else {
