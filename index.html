@@ -1373,25 +1373,36 @@
         //   Ctrl/Cmd+V  -> paste a copy of it, offset slightly so it's not stacked exactly on top
         let clipboardElements = null;
 
-        document.addEventListener('keydown', function(e) {
-            if (!editMode) return;
+        function isArrowKey(event) {
+            const key = event.key || '';
+            const code = event.code || '';
+            return ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key) ||
+                   ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(code);
+        }
 
+        document.addEventListener('keydown', function(e) {
             const active = document.activeElement;
             const isTyping = active && (active.isContentEditable || active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
+
+            if (isArrowKey(e) && !isTyping) {
+                e.preventDefault();
+            }
+
+            if (!editMode) return;
             if (isTyping) return;
             if (activeResize || resizeDeleteLock) return;
 
             const selectedGroup = Array.from(document.querySelectorAll('.editable-element.selected'));
+            const key = e.key || e.code;
 
-            if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            if (key === 'ArrowUp' || key === 'ArrowDown' || key === 'ArrowLeft' || key === 'ArrowRight') {
                 if (selectedGroup.length === 0) return;
-                e.preventDefault();
                 const step = gridSnapToggle.checked ? GRID_SIZE : 1;
                 let dx = 0, dy = 0;
-                if (e.key === 'ArrowUp') dy = -step;
-                else if (e.key === 'ArrowDown') dy = step;
-                else if (e.key === 'ArrowLeft') dx = -step;
-                else if (e.key === 'ArrowRight') dx = step;
+                if (key === 'ArrowUp') dy = -step;
+                else if (key === 'ArrowDown') dy = step;
+                else if (key === 'ArrowLeft') dx = -step;
+                else if (key === 'ArrowRight') dx = step;
 
                 selectedGroup.forEach(el => {
                     // offsetLeft/offsetTop give the actual current pixel position
